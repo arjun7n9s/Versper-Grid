@@ -55,10 +55,10 @@ def generate_launch_description():
         executable="parameter_bridge",
         name="drone_bridge",
         arguments=[
-            "/drone/base_link/drone_cam/image@sensor_msgs/msg/Image[ignition.msgs.Image",
+            "/drone_d1/base_link/drone_cam/image@sensor_msgs/msg/Image[ignition.msgs.Image",
         ],
         output="screen",
-        remappings=[("/drone/base_link/drone_cam/image", "/drone_cam/image_raw")],
+        remappings=[("/drone_d1/base_link/drone_cam/image", "/drone_cam/image_raw")],
     )
 
     return LaunchDescription([

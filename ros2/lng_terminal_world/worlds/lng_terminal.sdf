@@ -27,7 +27,6 @@
     <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
     <plugin filename="gz-sim-user-commands-system"    name="gz::sim::systems::UserCommands"/>
     <plugin filename="gz-sim-sensors-system"          name="gz::sim::systems::Sensors"/>
-    <plugin filename="ignition-gazebo-particle-emitter2-system" name="ignition::gazebo::systems::ParticleEmitter2"/>
 
     <!-- Pre-dawn scene: warmer tones, fog visible, grid disabled -->
     <scene>
@@ -236,49 +235,49 @@
         <material><ambient>0.85 0.38 0.08 1</ambient><diffuse>0.95 0.45 0.10 1</diffuse><emissive>0.40 0.14 0.0 1</emissive></material></visual>
     </link></model>
 
-    <!-- ═══ GAS LEAK PLUME at B-4 (real textured particle emitter) ═══ -->
-    <model name="gas_plume_main"><static>true</static><pose>68 -65 1.5 0 0 0</pose><link name="l">
-      <particle_emitter name="emitter" type="point">
-        <emitting>true</emitting>
-        <particle_size>3 3 3</particle_size>
-        <rate>18</rate>
-        <duration>0</duration>
-        <lifetime>7</lifetime>
-        <min_velocity>0.6</min_velocity>
-        <max_velocity>1.6</max_velocity>
-        <scale_rate>1.0</scale_rate>
-        <color_start>0.78 0.92 0.82 1</color_start>
-        <color_end>0.85 0.94 0.88 0</color_end>
-        <material>
-          <diffuse>0.78 0.92 0.82 1</diffuse>
-          <pbr><metal>
-            <albedo_map>materials/textures/smoke.png</albedo_map>
-          </metal></pbr>
-        </material>
-        <color_range_image>materials/textures/smoke.png</color_range_image>
-      </particle_emitter></link></model>
-
-    <!-- Low-level haze drift -->
-    <model name="gas_plume_low"><static>true</static><pose>66 -63 0.5 0 0 0</pose><link name="l">
-      <particle_emitter name="emitter" type="point">
-        <emitting>true</emitting>
-        <particle_size>2 2 2</particle_size>
-        <rate>10</rate>
-        <duration>0</duration>
-        <lifetime>10</lifetime>
-        <min_velocity>0.1</min_velocity>
-        <max_velocity>0.5</max_velocity>
-        <scale_rate>0.6</scale_rate>
-        <color_start>0.82 0.92 0.85 0.7</color_start>
-        <color_end>0.88 0.94 0.90 0</color_end>
-        <material>
-          <diffuse>0.82 0.92 0.85 1</diffuse>
-          <pbr><metal>
-            <albedo_map>materials/textures/smoke.png</albedo_map>
-          </metal></pbr>
-        </material>
-        <color_range_image>materials/textures/smoke.png</color_range_image>
-      </particle_emitter></link></model>
+    <!-- ═══ B-4 GAS PLUME: opaque emissive geometry (no transparency = no white-quad bug) ═══ -->
+    <!-- Tall vertical mist column — series of large opaque grey-green spheres, sized for visibility -->
+    <model name="plume_lvl1"><static>true</static><pose>68 -64 3 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>2.5</radius></sphere></geometry>
+      <material><ambient>0.62 0.66 0.62 1</ambient><diffuse>0.70 0.74 0.70 1</diffuse><specular>0.0 0.0 0.0 1</specular>
+      <emissive>0.18 0.20 0.18 1</emissive></material></visual></link></model>
+    <model name="plume_lvl2"><static>true</static><pose>68.5 -63.5 6.5 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>3.0</radius></sphere></geometry>
+      <material><ambient>0.65 0.68 0.65 1</ambient><diffuse>0.73 0.76 0.73 1</diffuse>
+      <emissive>0.20 0.22 0.20 1</emissive></material></visual></link></model>
+    <model name="plume_lvl3"><static>true</static><pose>69.2 -62.8 10.5 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>3.6</radius></sphere></geometry>
+      <material><ambient>0.68 0.71 0.68 1</ambient><diffuse>0.76 0.79 0.76 1</diffuse>
+      <emissive>0.22 0.24 0.22 1</emissive></material></visual></link></model>
+    <model name="plume_lvl4"><static>true</static><pose>70.1 -61.9 15 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>4.2</radius></sphere></geometry>
+      <material><ambient>0.70 0.73 0.70 1</ambient><diffuse>0.78 0.81 0.78 1</diffuse>
+      <emissive>0.24 0.26 0.24 1</emissive></material></visual></link></model>
+    <model name="plume_lvl5"><static>true</static><pose>71.3 -60.5 20 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>4.8</radius></sphere></geometry>
+      <material><ambient>0.72 0.75 0.72 1</ambient><diffuse>0.80 0.83 0.80 1</diffuse>
+      <emissive>0.26 0.28 0.26 1</emissive></material></visual></link></model>
+    <model name="plume_lvl6"><static>true</static><pose>72.8 -58.7 26 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>5.5</radius></sphere></geometry>
+      <material><ambient>0.74 0.76 0.74 1</ambient><diffuse>0.82 0.84 0.82 1</diffuse>
+      <emissive>0.27 0.29 0.27 1</emissive></material></visual></link></model>
+    <model name="plume_lvl7"><static>true</static><pose>74.5 -56.5 32 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>6.2</radius></sphere></geometry>
+      <material><ambient>0.74 0.76 0.74 1</ambient><diffuse>0.82 0.84 0.82 1</diffuse>
+      <emissive>0.28 0.30 0.28 1</emissive></material></visual></link></model>
+    <!-- Ground-level dispersal blobs -->
+    <model name="haze_a"><static>true</static><pose>64 -64 0.8 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>2.0</radius></sphere></geometry>
+      <material><ambient>0.60 0.64 0.60 1</ambient><diffuse>0.68 0.72 0.68 1</diffuse>
+      <emissive>0.16 0.18 0.16 1</emissive></material></visual></link></model>
+    <model name="haze_b"><static>true</static><pose>71 -67 0.6 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>1.6</radius></sphere></geometry>
+      <material><ambient>0.60 0.64 0.60 1</ambient><diffuse>0.68 0.72 0.68 1</diffuse>
+      <emissive>0.16 0.18 0.16 1</emissive></material></visual></link></model>
+    <model name="haze_c"><static>true</static><pose>67 -69 0.5 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>1.4</radius></sphere></geometry>
+      <material><ambient>0.60 0.64 0.60 1</ambient><diffuse>0.68 0.72 0.68 1</diffuse>
+      <emissive>0.16 0.18 0.16 1</emissive></material></visual></link></model>
 
     <!-- Pipe rack across Sector 1 -->
     <model name="rk1"><static>true</static><pose>-90 0 4.5 0 0 0</pose><link name="l">
@@ -354,27 +353,20 @@
       <visual name="v"><geometry><sphere><radius>1.4</radius></sphere></geometry>
         <material><ambient>0.85 0.20 0.05 1</ambient><diffuse>0.95 0.25 0.06 1</diffuse>
         <emissive>0.70 0.15 0.03 1</emissive></material></visual></link></model>
-    <!-- Real particle smoke trail rising from flare -->
-    <model name="flare_smoke"><static>true</static><pose>110 90 78 0 0 0</pose><link name="l">
-      <particle_emitter name="emitter" type="point">
-        <emitting>true</emitting>
-        <particle_size>4 4 4</particle_size>
-        <rate>20</rate>
-        <duration>0</duration>
-        <lifetime>5</lifetime>
-        <min_velocity>3</min_velocity>
-        <max_velocity>6</max_velocity>
-        <scale_rate>1.5</scale_rate>
-        <color_start>0.40 0.20 0.10 1</color_start>
-        <color_end>0.10 0.10 0.12 0</color_end>
-        <material>
-          <diffuse>0.6 0.6 0.6 1</diffuse>
-          <pbr><metal>
-            <albedo_map>materials/textures/smoke.png</albedo_map>
-          </metal></pbr>
-        </material>
-        <color_range_image>materials/textures/smoke.png</color_range_image>
-      </particle_emitter></link></model>
+
+    <!-- ═══ Flare smoke trails: opaque dark spheres rising ═══ -->
+    <model name="flare_smk1"><static>true</static><pose>110 90 82 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>2.2</radius></sphere></geometry>
+      <material><ambient>0.18 0.16 0.14 1</ambient><diffuse>0.24 0.22 0.20 1</diffuse>
+      <emissive>0.05 0.04 0.03 1</emissive></material></visual></link></model>
+    <model name="flare_smk2"><static>true</static><pose>112 92 88 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>2.8</radius></sphere></geometry>
+      <material><ambient>0.16 0.14 0.13 1</ambient><diffuse>0.22 0.20 0.18 1</diffuse>
+      <emissive>0.04 0.03 0.02 1</emissive></material></visual></link></model>
+    <model name="flare_smk3"><static>true</static><pose>114 95 96 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>3.5</radius></sphere></geometry>
+      <material><ambient>0.14 0.12 0.11 1</ambient><diffuse>0.20 0.18 0.16 1</diffuse>
+      <emissive>0.03 0.02 0.02 1</emissive></material></visual></link></model>
 
     <!-- Control room -->
     <model name="control_room"><static>true</static><pose>-85 20 5.5 0 0 0</pose><link name="l">
@@ -384,7 +376,7 @@
         <pbr><metal><roughness>0.88</roughness><metalness>0.0</metalness></metal></pbr></material></visual>
       <visual name="roof"><pose>0 0 5.7 0 0 0</pose><geometry><box><size>23 16 0.4</size></box></geometry>
         <material><ambient>0.25 0.25 0.25 1</ambient><diffuse>0.32 0.32 0.32 1</diffuse></material></visual>
-      <visual name="win"><pose>11.1 0 1.2 0 0 0</pose><geometry><box><size>0.12 9 3.5</size></box></geometry>
+      <visual name="win"><pose>11.6 0 1.2 0 0 0</pose><geometry><box><size>0.12 9 3.5</size></box></geometry>
         <material><ambient>0.04 0.08 0.16 1</ambient><diffuse>0.06 0.12 0.22 1</diffuse>
         <emissive>0.05 0.10 0.18 1</emissive></material></visual></link></model>
 
@@ -396,10 +388,10 @@
         <pbr><metal><roughness>0.86</roughness><metalness>0.0</metalness></metal></pbr></material></visual>
       <visual name="roof"><pose>0 0 7.2 0 0 0</pose><geometry><box><size>33 21 0.5</size></box></geometry>
         <material><ambient>0.24 0.24 0.24 1</ambient><diffuse>0.30 0.30 0.30 1</diffuse></material></visual>
-      <visual name="win_a"><pose>16.1 -5 1.5 0 0 0</pose><geometry><box><size>0.12 4 3</size></box></geometry>
+      <visual name="win_a"><pose>16.6 -5 1.5 0 0 0</pose><geometry><box><size>0.12 4 3</size></box></geometry>
         <material><ambient>0.8 0.6 0.18 1</ambient><diffuse>1.0 0.78 0.22 1</diffuse>
         <emissive>0.55 0.38 0.08 1</emissive></material></visual>
-      <visual name="win_b"><pose>16.1 5 1.5 0 0 0</pose><geometry><box><size>0.12 4 3</size></box></geometry>
+      <visual name="win_b"><pose>16.6 5 1.5 0 0 0</pose><geometry><box><size>0.12 4 3</size></box></geometry>
         <material><ambient>0.8 0.6 0.18 1</ambient><diffuse>1.0 0.78 0.22 1</diffuse>
         <emissive>0.55 0.38 0.08 1</emissive></material></visual></link></model>
 
@@ -442,48 +434,56 @@
         <material><ambient>1.0 0.04 0.04 1</ambient><diffuse>1.0 0.04 0.04 1</diffuse>
         <emissive>0.90 0.0 0.0 1</emissive></material></visual></link></model>
 
-    <!-- ═══ CCTV GATE — bullet camera on wall-mount arm, south fence ═══ -->
-    <!-- Pole: sturdy concrete-base steel pole 10m tall -->
+    <!-- ═══ CCTV GATE — industrial box camera on wall-mount arm ═══ -->
     <model name="cctv_gate_pole"><static>true</static><pose>0 -195 0 0 0 0</pose><link name="l">
-      <collision name="pole"><pose>0 0 5 0 0 0</pose><geometry><cylinder><radius>0.18</radius><length>10</length></cylinder></geometry></collision>
-      <visual name="base"><pose>0 0 0.3 0 0 0</pose><geometry><cylinder><radius>0.45</radius><length>0.6</length></cylinder></geometry>
+      <collision name="pole_c"><pose>0 0 5 0 0 0</pose><geometry><cylinder><radius>0.20</radius><length>10</length></cylinder></geometry></collision>
+      <visual name="base_v"><pose>0 0 0.4 0 0 0</pose><geometry><cylinder><radius>0.5</radius><length>0.8</length></cylinder></geometry>
         <material><ambient>0.30 0.30 0.30 1</ambient><diffuse>0.38 0.38 0.38 1</diffuse>
         <pbr><metal><roughness>0.85</roughness><metalness>0.1</metalness></metal></pbr></material></visual>
-      <visual name="pole_v"><pose>0 0 5 0 0 0</pose><geometry><cylinder><radius>0.18</radius><length>10</length></cylinder></geometry>
-        <material><ambient>0.22 0.22 0.24 1</ambient><diffuse>0.28 0.28 0.30 1</diffuse><specular>0.25 0.25 0.27 1</specular>
+      <visual name="pole_v"><pose>0 0 5 0 0 0</pose><geometry><cylinder><radius>0.20</radius><length>10</length></cylinder></geometry>
+        <material><ambient>0.22 0.22 0.24 1</ambient><diffuse>0.28 0.28 0.30 1</diffuse>
         <pbr><metal><roughness>0.35</roughness><metalness>0.82</metalness></metal></pbr></material></visual>
-      <!-- Horizontal arm extending south from pole top -->
-      <visual name="arm"><pose>0 -0.6 9.5 0 1.5707 0</pose><geometry><cylinder><radius>0.09</radius><length>1.2</length></cylinder></geometry>
+      <!-- Horizontal mounting arm -->
+      <visual name="arm_v"><pose>0 -1.0 9.5 0 1.5707 0</pose><geometry><cylinder><radius>0.10</radius><length>2.0</length></cylinder></geometry>
         <material><ambient>0.22 0.22 0.24 1</ambient><diffuse>0.28 0.28 0.30 1</diffuse>
         <pbr><metal><roughness>0.35</roughness><metalness>0.82</metalness></metal></pbr></material></visual>
     </link></model>
 
-    <!-- Actual CCTV body: industrial bullet-style, large and visible -->
-    <model name="cctv_gate"><static>true</static><pose>0 -195.6 9.5 0 0.35 1.5707</pose><link name="body">
-      <!-- Main cylindrical housing (bullet cam body) -->
-      <visual name="housing"><geometry><cylinder><radius>0.18</radius><length>0.85</length></cylinder></geometry>
-        <material><ambient>0.82 0.82 0.82 1</ambient><diffuse>0.88 0.88 0.88 1</diffuse><specular>0.30 0.30 0.30 1</specular>
-        <pbr><metal><roughness>0.55</roughness><metalness>0.35</metalness></metal></pbr></material></visual>
-      <!-- Sun shield cap -->
-      <visual name="hood"><pose>0 0 0.45 0 0 0</pose><geometry><cylinder><radius>0.22</radius><length>0.12</length></cylinder></geometry>
-        <material><ambient>0.60 0.60 0.62 1</ambient><diffuse>0.70 0.70 0.72 1</diffuse>
-        <pbr><metal><roughness>0.4</roughness><metalness>0.6</metalness></metal></pbr></material></visual>
-      <!-- Glass lens at front -->
-      <visual name="lens"><pose>0 0 -0.43 0 0 0</pose><geometry><cylinder><radius>0.15</radius><length>0.05</length></cylinder></geometry>
-        <material><ambient>0.03 0.05 0.12 1</ambient><diffuse>0.05 0.08 0.20 1</diffuse><specular>0.9 0.9 1.0 1</specular>
-        <pbr><metal><roughness>0.05</roughness><metalness>0.2</metalness></metal></pbr></material></visual>
-      <!-- IR LED ring around lens -->
-      <visual name="ir_ring"><pose>0 0 -0.46 0 0 0</pose><geometry><cylinder><radius>0.17</radius><length>0.01</length></cylinder></geometry>
-        <material><ambient>0.3 0.05 0.05 1</ambient><diffuse>0.4 0.08 0.08 1</diffuse>
-        <emissive>0.20 0.02 0.02 1</emissive></material></visual>
-      <!-- Mount bracket connecting to pole arm -->
-      <visual name="bracket"><pose>0 0 0.48 0 0 0</pose><geometry><box><size>0.12 0.12 0.25</size></box></geometry>
-        <material><ambient>0.20 0.20 0.22 1</ambient><diffuse>0.26 0.26 0.28 1</diffuse>
+    <!-- BIG visible camera — boxy industrial bullet style -->
+    <model name="cctv_gate"><static>true</static><pose>0 -196.0 9.5 0 0.30 1.5707</pose><link name="body">
+      <!-- Main body box (0.5 × 1.2 × 0.5 — clearly visible) -->
+      <visual name="housing"><geometry><box><size>0.50 1.2 0.50</size></box></geometry>
+        <material><ambient>0.10 0.10 0.10 1</ambient><diffuse>0.15 0.15 0.15 1</diffuse><specular>0.4 0.4 0.4 1</specular>
+        <pbr><metal><roughness>0.40</roughness><metalness>0.5</metalness></metal></pbr></material></visual>
+      <!-- Sun shield hood on top -->
+      <visual name="hood"><pose>0 0.05 0.30 0 0 0</pose><geometry><box><size>0.55 1.0 0.08</size></box></geometry>
+        <material><ambient>0.06 0.06 0.06 1</ambient><diffuse>0.10 0.10 0.10 1</diffuse>
+        <pbr><metal><roughness>0.45</roughness><metalness>0.5</metalness></metal></pbr></material></visual>
+      <!-- Front face (lens side) -->
+      <visual name="face"><pose>0 -0.61 0 0 0 0</pose><geometry><box><size>0.50 0.02 0.50</size></box></geometry>
+        <material><ambient>0.05 0.05 0.05 1</ambient><diffuse>0.08 0.08 0.08 1</diffuse></material></visual>
+      <!-- Round glass lens — big and obvious -->
+      <visual name="lens_ring"><pose>0 -0.62 0 0 0 0</pose><geometry><cylinder><radius>0.18</radius><length>0.04</length></cylinder></geometry>
+        <material><ambient>0.04 0.04 0.04 1</ambient><diffuse>0.06 0.06 0.06 1</diffuse>
+        <pbr><metal><roughness>0.3</roughness><metalness>0.7</metalness></metal></pbr></material></visual>
+      <visual name="lens_glass"><pose>0 -0.645 0 0 0 0</pose><geometry><cylinder><radius>0.14</radius><length>0.02</length></cylinder></geometry>
+        <material><ambient>0.02 0.06 0.18 1</ambient><diffuse>0.04 0.10 0.28 1</diffuse><specular>0.95 0.95 1.0 1</specular>
+        <pbr><metal><roughness>0.05</roughness><metalness>0.4</metalness></metal></pbr></material></visual>
+      <!-- IR LED ring -->
+      <visual name="ir_ring"><pose>0 -0.66 0 0 0 0</pose><geometry><torus><radius>0.20</radius><tube_radius>0.012</tube_radius></torus></geometry>
+        <material><ambient>0.40 0.05 0.05 1</ambient><diffuse>0.55 0.10 0.10 1</diffuse>
+        <emissive>0.30 0.04 0.04 1</emissive></material></visual>
+      <!-- Mount bracket (attaches to arm above) -->
+      <visual name="bracket"><pose>0 0 0.35 0 0 0</pose><geometry><box><size>0.18 0.18 0.30</size></box></geometry>
+        <material><ambient>0.18 0.18 0.20 1</ambient><diffuse>0.24 0.24 0.26 1</diffuse>
         <pbr><metal><roughness>0.4</roughness><metalness>0.8</metalness></metal></pbr></material></visual>
-      <!-- Status LED — green, recording -->
-      <visual name="status_led"><pose>0.18 0 -0.3 0 0 0</pose><geometry><sphere><radius>0.018</radius></sphere></geometry>
-        <material><ambient>0.0 0.8 0.0 1</ambient><diffuse>0.0 1.0 0.0 1</diffuse>
-        <emissive>0.0 0.7 0.0 1</emissive></material></visual>
+      <!-- Recording status LED — green -->
+      <visual name="rec_led"><pose>0.22 -0.50 0.20 0 0 0</pose><geometry><sphere><radius>0.025</radius></sphere></geometry>
+        <material><ambient>0.0 0.85 0.0 1</ambient><diffuse>0.0 1.0 0.0 1</diffuse>
+        <emissive>0.0 0.75 0.0 1</emissive></material></visual>
+      <!-- Brand label area -->
+      <visual name="label"><pose>0.255 0 0.0 0 0 0</pose><geometry><box><size>0.02 0.30 0.10</size></box></geometry>
+        <material><ambient>0.85 0.85 0.85 1</ambient><diffuse>0.95 0.95 0.95 1</diffuse></material></visual>
       <sensor name="cctv_cam" type="camera">
         <update_rate>2</update_rate>
         <camera>
@@ -494,39 +494,41 @@
         </camera>
       </sensor></link></model>
 
-    <!-- ═══ CCTV SOUTH — PTZ dome camera overlooking B-4 ═══ -->
+    <!-- ═══ CCTV SOUTH — same big bullet style, watching B-4 ═══ -->
     <model name="cctv_south_pole"><static>true</static><pose>30 -85 0 0 0 0</pose><link name="l">
-      <collision name="pole"><pose>0 0 6 0 0 0</pose><geometry><cylinder><radius>0.20</radius><length>12</length></cylinder></geometry></collision>
-      <visual name="base"><pose>0 0 0.3 0 0 0</pose><geometry><cylinder><radius>0.5</radius><length>0.6</length></cylinder></geometry>
+      <collision name="pole_c"><pose>0 0 6 0 0 0</pose><geometry><cylinder><radius>0.22</radius><length>12</length></cylinder></geometry></collision>
+      <visual name="base_v"><pose>0 0 0.4 0 0 0</pose><geometry><cylinder><radius>0.55</radius><length>0.8</length></cylinder></geometry>
         <material><ambient>0.30 0.30 0.30 1</ambient><diffuse>0.38 0.38 0.38 1</diffuse>
         <pbr><metal><roughness>0.85</roughness><metalness>0.1</metalness></metal></pbr></material></visual>
-      <visual name="pole_v"><pose>0 0 6 0 0 0</pose><geometry><cylinder><radius>0.20</radius><length>12</length></cylinder></geometry>
+      <visual name="pole_v"><pose>0 0 6 0 0 0</pose><geometry><cylinder><radius>0.22</radius><length>12</length></cylinder></geometry>
         <material><ambient>0.22 0.22 0.24 1</ambient><diffuse>0.28 0.28 0.30 1</diffuse>
         <pbr><metal><roughness>0.35</roughness><metalness>0.82</metalness></metal></pbr></material></visual>
-      <!-- Cap plate where dome attaches -->
-      <visual name="cap"><pose>0 0 12.1 0 0 0</pose><geometry><cylinder><radius>0.35</radius><length>0.08</length></cylinder></geometry>
-        <material><ambient>0.18 0.18 0.20 1</ambient><diffuse>0.24 0.24 0.26 1</diffuse>
-        <pbr><metal><roughness>0.4</roughness><metalness>0.8</metalness></metal></pbr></material></visual>
+      <visual name="arm_v"><pose>0 -1.2 11.5 0 1.5707 0</pose><geometry><cylinder><radius>0.11</radius><length>2.4</length></cylinder></geometry>
+        <material><ambient>0.22 0.22 0.24 1</ambient><diffuse>0.28 0.28 0.30 1</diffuse>
+        <pbr><metal><roughness>0.35</roughness><metalness>0.82</metalness></metal></pbr></material></visual>
     </link></model>
 
-    <!-- PTZ dome camera body (hanging below cap) -->
-    <model name="cctv_south"><static>true</static><pose>30 -85 11.75 0 0.4 3.14</pose><link name="body">
-      <!-- Upper metal cylinder (housing ring) -->
-      <visual name="ring"><pose>0 0 0.15 0 0 0</pose><geometry><cylinder><radius>0.30</radius><length>0.30</length></cylinder></geometry>
-        <material><ambient>0.82 0.82 0.82 1</ambient><diffuse>0.88 0.88 0.88 1</diffuse>
-        <pbr><metal><roughness>0.55</roughness><metalness>0.35</metalness></metal></pbr></material></visual>
-      <!-- Dark glass dome -->
-      <visual name="dome"><pose>0 0 -0.05 0 0 0</pose><geometry><sphere><radius>0.28</radius></sphere></geometry>
-        <material><ambient>0.04 0.04 0.08 1</ambient><diffuse>0.08 0.08 0.14 1</diffuse><specular>0.8 0.8 0.9 1</specular>
-        <transparency>0.35</transparency>
-        <pbr><metal><roughness>0.08</roughness><metalness>0.2</metalness></metal></pbr></material></visual>
-      <!-- Inner lens visible through dome -->
-      <visual name="lens"><pose>0.0 0.1 -0.05 0.3 0 0</pose><geometry><cylinder><radius>0.10</radius><length>0.08</length></cylinder></geometry>
-        <material><ambient>0.02 0.02 0.05 1</ambient><diffuse>0.03 0.03 0.08 1</diffuse><specular>0.95 0.95 1.0 1</specular></material></visual>
-      <!-- Red recording LED -->
-      <visual name="rec_led"><pose>0.22 0 0.12 0 0 0</pose><geometry><sphere><radius>0.02</radius></sphere></geometry>
+    <model name="cctv_south"><static>true</static><pose>30 -86.4 11.5 0 0.40 1.5707</pose><link name="body">
+      <visual name="housing"><geometry><box><size>0.55 1.4 0.55</size></box></geometry>
+        <material><ambient>0.10 0.10 0.10 1</ambient><diffuse>0.15 0.15 0.15 1</diffuse><specular>0.4 0.4 0.4 1</specular>
+        <pbr><metal><roughness>0.40</roughness><metalness>0.5</metalness></metal></pbr></material></visual>
+      <visual name="hood"><pose>0 0.05 0.33 0 0 0</pose><geometry><box><size>0.60 1.2 0.10</size></box></geometry>
+        <material><ambient>0.06 0.06 0.06 1</ambient><diffuse>0.10 0.10 0.10 1</diffuse>
+        <pbr><metal><roughness>0.45</roughness><metalness>0.5</metalness></metal></pbr></material></visual>
+      <visual name="lens_ring"><pose>0 -0.72 0 0 0 0</pose><geometry><cylinder><radius>0.20</radius><length>0.05</length></cylinder></geometry>
+        <material><ambient>0.04 0.04 0.04 1</ambient><diffuse>0.06 0.06 0.06 1</diffuse>
+        <pbr><metal><roughness>0.3</roughness><metalness>0.7</metalness></metal></pbr></material></visual>
+      <visual name="lens_glass"><pose>0 -0.745 0 0 0 0</pose><geometry><cylinder><radius>0.16</radius><length>0.02</length></cylinder></geometry>
+        <material><ambient>0.02 0.06 0.18 1</ambient><diffuse>0.04 0.10 0.28 1</diffuse><specular>0.95 0.95 1.0 1</specular>
+        <pbr><metal><roughness>0.05</roughness><metalness>0.4</metalness></metal></pbr></material></visual>
+      <visual name="bracket"><pose>0 0 0.40 0 0 0</pose><geometry><box><size>0.20 0.20 0.30</size></box></geometry>
+        <material><ambient>0.18 0.18 0.20 1</ambient><diffuse>0.24 0.24 0.26 1</diffuse>
+        <pbr><metal><roughness>0.4</roughness><metalness>0.8</metalness></metal></pbr></material></visual>
+      <visual name="rec_led"><pose>0.25 -0.55 0.22 0 0 0</pose><geometry><sphere><radius>0.028</radius></sphere></geometry>
         <material><ambient>1.0 0.0 0.0 1</ambient><diffuse>1.0 0.0 0.0 1</diffuse>
         <emissive>0.85 0.0 0.0 1</emissive></material></visual>
+      <visual name="label"><pose>0.28 0 0.0 0 0 0</pose><geometry><box><size>0.02 0.32 0.10</size></box></geometry>
+        <material><ambient>0.85 0.85 0.85 1</ambient><diffuse>0.95 0.95 0.95 1</diffuse></material></visual>
       <sensor name="cctv_south_cam" type="camera">
         <update_rate>2</update_rate>
         <camera>
@@ -541,37 +543,52 @@
       <visual name="v"><geometry><cylinder><radius>4.5</radius><length>0.04</length></cylinder></geometry>
         <material><ambient>0.58 0.48 0.08 1</ambient><diffuse>0.72 0.60 0.10 1</diffuse></material></visual></link></model>
 
-    <actor name="drone_d1">
-      <pose>10 -30 30 0 0 2.356</pose>
-      <link name="body">
-        <visual name="frame"><geometry><box><size>0.42 0.42 0.13</size></box></geometry>
+    <!-- ═══ DRONE D-1 (PRIMARY): large, hovering near B-4 incident, has the camera feed ═══ -->
+    <model name="drone_d1"><static>true</static><pose>72 -50 18 0 0 -2.4</pose>
+      <link name="base_link">
+        <visual name="frame"><geometry><box><size>0.55 0.55 0.16</size></box></geometry>
           <material><ambient>0.08 0.08 0.10 1</ambient><diffuse>0.13 0.13 0.16 1</diffuse>
           <pbr><metal><roughness>0.24</roughness><metalness>0.82</metalness></metal></pbr></material></visual>
-        <visual name="arm_ne"><pose>0.21 0.21 0 0 0 0.785</pose><geometry><box><size>0.60 0.055 0.04</size></box></geometry>
+        <visual name="arm_ne"><pose>0.27 0.27 0 0 0 0.785</pose><geometry><box><size>0.78 0.07 0.05</size></box></geometry>
           <material><ambient>0.12 0.12 0.14 1</ambient><diffuse>0.18 0.18 0.22 1</diffuse></material></visual>
-        <visual name="arm_nw"><pose>-0.21 0.21 0 0 0 -0.785</pose><geometry><box><size>0.60 0.055 0.04</size></box></geometry>
+        <visual name="arm_nw"><pose>-0.27 0.27 0 0 0 -0.785</pose><geometry><box><size>0.78 0.07 0.05</size></box></geometry>
           <material><ambient>0.12 0.12 0.14 1</ambient><diffuse>0.18 0.18 0.22 1</diffuse></material></visual>
-        <visual name="arm_sw"><pose>-0.21 -0.21 0 0 0 0.785</pose><geometry><box><size>0.60 0.055 0.04</size></box></geometry>
+        <visual name="arm_sw"><pose>-0.27 -0.27 0 0 0 0.785</pose><geometry><box><size>0.78 0.07 0.05</size></box></geometry>
           <material><ambient>0.12 0.12 0.14 1</ambient><diffuse>0.18 0.18 0.22 1</diffuse></material></visual>
-        <visual name="arm_se"><pose>0.21 -0.21 0 0 0 -0.785</pose><geometry><box><size>0.60 0.055 0.04</size></box></geometry>
+        <visual name="arm_se"><pose>0.27 -0.27 0 0 0 -0.785</pose><geometry><box><size>0.78 0.07 0.05</size></box></geometry>
           <material><ambient>0.12 0.12 0.14 1</ambient><diffuse>0.18 0.18 0.22 1</diffuse></material></visual>
-        <visual name="m_ne"><pose>0.36 0.36 0.04 0 0 0</pose><geometry><cylinder><radius>0.055</radius><length>0.08</length></cylinder></geometry>
+        <!-- Propeller discs (visible spinning illusion via thin grey discs) -->
+        <visual name="prop_ne"><pose>0.47 0.47 0.06 0 0 0</pose><geometry><cylinder><radius>0.22</radius><length>0.005</length></cylinder></geometry>
+          <material><ambient>0.40 0.40 0.40 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse><transparency>0.5</transparency></material></visual>
+        <visual name="prop_nw"><pose>-0.47 0.47 0.06 0 0 0</pose><geometry><cylinder><radius>0.22</radius><length>0.005</length></cylinder></geometry>
+          <material><ambient>0.40 0.40 0.40 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse><transparency>0.5</transparency></material></visual>
+        <visual name="prop_sw"><pose>-0.47 -0.47 0.06 0 0 0</pose><geometry><cylinder><radius>0.22</radius><length>0.005</length></cylinder></geometry>
+          <material><ambient>0.40 0.40 0.40 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse><transparency>0.5</transparency></material></visual>
+        <visual name="prop_se"><pose>0.47 -0.47 0.06 0 0 0</pose><geometry><cylinder><radius>0.22</radius><length>0.005</length></cylinder></geometry>
+          <material><ambient>0.40 0.40 0.40 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse><transparency>0.5</transparency></material></visual>
+        <!-- Motors -->
+        <visual name="m_ne"><pose>0.47 0.47 0.025 0 0 0</pose><geometry><cylinder><radius>0.07</radius><length>0.10</length></cylinder></geometry>
           <material><ambient>0.72 0.66 0.0 1</ambient><diffuse>0.90 0.82 0.0 1</diffuse></material></visual>
-        <visual name="m_nw"><pose>-0.36 0.36 0.04 0 0 0</pose><geometry><cylinder><radius>0.055</radius><length>0.08</length></cylinder></geometry>
+        <visual name="m_nw"><pose>-0.47 0.47 0.025 0 0 0</pose><geometry><cylinder><radius>0.07</radius><length>0.10</length></cylinder></geometry>
           <material><ambient>0.72 0.66 0.0 1</ambient><diffuse>0.90 0.82 0.0 1</diffuse></material></visual>
-        <visual name="m_sw"><pose>-0.36 -0.36 0.04 0 0 0</pose><geometry><cylinder><radius>0.055</radius><length>0.08</length></cylinder></geometry>
+        <visual name="m_sw"><pose>-0.47 -0.47 0.025 0 0 0</pose><geometry><cylinder><radius>0.07</radius><length>0.10</length></cylinder></geometry>
           <material><ambient>0.72 0.66 0.0 1</ambient><diffuse>0.90 0.82 0.0 1</diffuse></material></visual>
-        <visual name="m_se"><pose>0.36 -0.36 0.04 0 0 0</pose><geometry><cylinder><radius>0.055</radius><length>0.08</length></cylinder></geometry>
+        <visual name="m_se"><pose>0.47 -0.47 0.025 0 0 0</pose><geometry><cylinder><radius>0.07</radius><length>0.10</length></cylinder></geometry>
           <material><ambient>0.72 0.66 0.0 1</ambient><diffuse>0.90 0.82 0.0 1</diffuse></material></visual>
-        <visual name="gimbal"><pose>0 0 -0.09 0 0 0</pose><geometry><sphere><radius>0.055</radius></sphere></geometry>
+        <!-- Gimbal camera under body -->
+        <visual name="gimbal"><pose>0 0 -0.12 0 0 0</pose><geometry><sphere><radius>0.075</radius></sphere></geometry>
           <material><ambient>0.05 0.05 0.05 1</ambient><diffuse>0.08 0.08 0.08 1</diffuse>
           <pbr><metal><roughness>0.10</roughness><metalness>0.0</metalness></metal></pbr></material></visual>
-        <visual name="nav_red"><pose>-0.30 0 0.01 0 0 0</pose><geometry><sphere><radius>0.03</radius></sphere></geometry>
-          <material><ambient>0.9 0.0 0.0 1</ambient><diffuse>1.0 0.0 0.0 1</diffuse><emissive>0.7 0.0 0.0 1</emissive></material></visual>
-        <visual name="nav_green"><pose>0.30 0 0.01 0 0 0</pose><geometry><sphere><radius>0.03</radius></sphere></geometry>
-          <material><ambient>0.0 0.9 0.0 1</ambient><diffuse>0.0 1.0 0.0 1</diffuse><emissive>0.0 0.7 0.0 1</emissive></material></visual>
+        <!-- Navigation lights -->
+        <visual name="nav_red"><pose>-0.40 0 0.02 0 0 0</pose><geometry><sphere><radius>0.04</radius></sphere></geometry>
+          <material><ambient>0.9 0.0 0.0 1</ambient><diffuse>1.0 0.0 0.0 1</diffuse><emissive>0.85 0.0 0.0 1</emissive></material></visual>
+        <visual name="nav_green"><pose>0.40 0 0.02 0 0 0</pose><geometry><sphere><radius>0.04</radius></sphere></geometry>
+          <material><ambient>0.0 0.9 0.0 1</ambient><diffuse>0.0 1.0 0.0 1</diffuse><emissive>0.0 0.85 0.0 1</emissive></material></visual>
+        <visual name="nav_white"><pose>0 0 0.10 0 0 0</pose><geometry><sphere><radius>0.035</radius></sphere></geometry>
+          <material><ambient>1.0 1.0 1.0 1</ambient><diffuse>1.0 1.0 1.0 1</diffuse><emissive>0.9 0.9 0.9 1</emissive></material></visual>
+        <collision name="c"><geometry><box><size>0.55 0.55 0.16</size></box></geometry></collision>
         <sensor name="drone_cam" type="camera">
-          <pose>0 0 -0.15 0 1.5707 0</pose>
+          <pose>0 0 -0.18 0 1.5707 0</pose>
           <update_rate>5</update_rate>
           <camera>
             <horizontal_fov>1.0472</horizontal_fov>
@@ -580,20 +597,59 @@
             <noise><type>gaussian</type><mean>0</mean><stddev>0.002</stddev></noise>
           </camera>
         </sensor>
-      </link>
-      <script>
-        <loop>true</loop>
-        <delay_start>0</delay_start>
-        <auto_start>true</auto_start>
-        <trajectory id="0" type="__default__">
-          <waypoint><time>0</time>  <pose>60 -30 30 0 0 -1.5707</pose></waypoint>
-          <waypoint><time>8</time>  <pose>100 -65 35 0 0 3.14</pose></waypoint>
-          <waypoint><time>16</time> <pose>60 -105 32 0 0 1.5707</pose></waypoint>
-          <waypoint><time>24</time> <pose>20 -65 28 0 0 0</pose></waypoint>
-          <waypoint><time>32</time> <pose>60 -30 30 0 0 -1.5707</pose></waypoint>
-        </trajectory>
-      </script>
-    </actor>
+      </link></model>
+
+    <!-- DRONE D-2: smaller, parked on the launch pad — NO camera feed -->
+    <model name="drone_d2"><static>true</static><pose>0 10 0.18 0 0 0.4</pose><link name="l">
+      <visual name="frame"><geometry><box><size>0.36 0.36 0.10</size></box></geometry>
+        <material><ambient>0.10 0.10 0.10 1</ambient><diffuse>0.16 0.16 0.18 1</diffuse>
+        <pbr><metal><roughness>0.30</roughness><metalness>0.7</metalness></metal></pbr></material></visual>
+      <visual name="arm_a"><pose>0.18 0.18 0 0 0 0.785</pose><geometry><box><size>0.55 0.05 0.04</size></box></geometry>
+        <material><ambient>0.12 0.12 0.14 1</ambient><diffuse>0.18 0.18 0.22 1</diffuse></material></visual>
+      <visual name="arm_b"><pose>-0.18 0.18 0 0 0 -0.785</pose><geometry><box><size>0.55 0.05 0.04</size></box></geometry>
+        <material><ambient>0.12 0.12 0.14 1</ambient><diffuse>0.18 0.18 0.22 1</diffuse></material></visual>
+      <visual name="arm_c"><pose>-0.18 -0.18 0 0 0 0.785</pose><geometry><box><size>0.55 0.05 0.04</size></box></geometry>
+        <material><ambient>0.12 0.12 0.14 1</ambient><diffuse>0.18 0.18 0.22 1</diffuse></material></visual>
+      <visual name="arm_d"><pose>0.18 -0.18 0 0 0 -0.785</pose><geometry><box><size>0.55 0.05 0.04</size></box></geometry>
+        <material><ambient>0.12 0.12 0.14 1</ambient><diffuse>0.18 0.18 0.22 1</diffuse></material></visual>
+      <visual name="m_a"><pose>0.32 0.32 0.02 0 0 0</pose><geometry><cylinder><radius>0.045</radius><length>0.07</length></cylinder></geometry>
+        <material><ambient>0.55 0.50 0.0 1</ambient><diffuse>0.75 0.68 0.0 1</diffuse></material></visual>
+      <visual name="m_b"><pose>-0.32 0.32 0.02 0 0 0</pose><geometry><cylinder><radius>0.045</radius><length>0.07</length></cylinder></geometry>
+        <material><ambient>0.55 0.50 0.0 1</ambient><diffuse>0.75 0.68 0.0 1</diffuse></material></visual>
+      <visual name="m_c"><pose>-0.32 -0.32 0.02 0 0 0</pose><geometry><cylinder><radius>0.045</radius><length>0.07</length></cylinder></geometry>
+        <material><ambient>0.55 0.50 0.0 1</ambient><diffuse>0.75 0.68 0.0 1</diffuse></material></visual>
+      <visual name="m_d"><pose>0.32 -0.32 0.02 0 0 0</pose><geometry><cylinder><radius>0.045</radius><length>0.07</length></cylinder></geometry>
+        <material><ambient>0.55 0.50 0.0 1</ambient><diffuse>0.75 0.68 0.0 1</diffuse></material></visual>
+      <collision name="c"><geometry><box><size>0.36 0.36 0.10</size></box></geometry></collision>
+    </link></model>
+
+    <!-- DRONE D-3: medium, patrolling Sector 2 — NO camera feed -->
+    <model name="drone_d3"><static>true</static><pose>440 30 25 0 0 1.2</pose><link name="l">
+      <visual name="frame"><geometry><box><size>0.45 0.45 0.13</size></box></geometry>
+        <material><ambient>0.10 0.10 0.10 1</ambient><diffuse>0.16 0.16 0.18 1</diffuse>
+        <pbr><metal><roughness>0.28</roughness><metalness>0.75</metalness></metal></pbr></material></visual>
+      <visual name="arm_a"><pose>0.22 0.22 0 0 0 0.785</pose><geometry><box><size>0.65 0.06 0.04</size></box></geometry>
+        <material><ambient>0.12 0.12 0.14 1</ambient><diffuse>0.18 0.18 0.22 1</diffuse></material></visual>
+      <visual name="arm_b"><pose>-0.22 0.22 0 0 0 -0.785</pose><geometry><box><size>0.65 0.06 0.04</size></box></geometry>
+        <material><ambient>0.12 0.12 0.14 1</ambient><diffuse>0.18 0.18 0.22 1</diffuse></material></visual>
+      <visual name="arm_c"><pose>-0.22 -0.22 0 0 0 0.785</pose><geometry><box><size>0.65 0.06 0.04</size></box></geometry>
+        <material><ambient>0.12 0.12 0.14 1</ambient><diffuse>0.18 0.18 0.22 1</diffuse></material></visual>
+      <visual name="arm_d"><pose>0.22 -0.22 0 0 0 -0.785</pose><geometry><box><size>0.65 0.06 0.04</size></box></geometry>
+        <material><ambient>0.12 0.12 0.14 1</ambient><diffuse>0.18 0.18 0.22 1</diffuse></material></visual>
+      <visual name="m_a"><pose>0.40 0.40 0.025 0 0 0</pose><geometry><cylinder><radius>0.06</radius><length>0.08</length></cylinder></geometry>
+        <material><ambient>0.65 0.60 0.0 1</ambient><diffuse>0.85 0.78 0.0 1</diffuse></material></visual>
+      <visual name="m_b"><pose>-0.40 0.40 0.025 0 0 0</pose><geometry><cylinder><radius>0.06</radius><length>0.08</length></cylinder></geometry>
+        <material><ambient>0.65 0.60 0.0 1</ambient><diffuse>0.85 0.78 0.0 1</diffuse></material></visual>
+      <visual name="m_c"><pose>-0.40 -0.40 0.025 0 0 0</pose><geometry><cylinder><radius>0.06</radius><length>0.08</length></cylinder></geometry>
+        <material><ambient>0.65 0.60 0.0 1</ambient><diffuse>0.85 0.78 0.0 1</diffuse></material></visual>
+      <visual name="m_d"><pose>0.40 -0.40 0.025 0 0 0</pose><geometry><cylinder><radius>0.06</radius><length>0.08</length></cylinder></geometry>
+        <material><ambient>0.65 0.60 0.0 1</ambient><diffuse>0.85 0.78 0.0 1</diffuse></material></visual>
+      <visual name="nav_r"><pose>-0.32 0 0.02 0 0 0</pose><geometry><sphere><radius>0.03</radius></sphere></geometry>
+        <material><emissive>0.85 0.0 0.0 1</emissive><diffuse>1.0 0 0 1</diffuse></material></visual>
+      <visual name="nav_g"><pose>0.32 0 0.02 0 0 0</pose><geometry><sphere><radius>0.03</radius></sphere></geometry>
+        <material><emissive>0.0 0.85 0.0 1</emissive><diffuse>0 1 0 1</diffuse></material></visual>
+      <collision name="c"><geometry><box><size>0.45 0.45 0.13</size></box></geometry></collision>
+    </link></model>
 
     <!-- ═══ SECTOR 2: Processing Complex (east, centred 450, 0) ═══ -->
     <!-- Fences forming inter-sector perimeter -->
@@ -662,7 +718,7 @@
       <visual name="v"><geometry><box><size>70 80 24</size></box></geometry>
         <material><ambient>0.32 0.32 0.34 1</ambient><diffuse>0.40 0.40 0.42 1</diffuse>
         <pbr><metal><roughness>0.65</roughness><metalness>0.3</metalness></metal></pbr></material></visual>
-      <visual name="stripes"><pose>35.1 0 0 0 0 0</pose><geometry><box><size>0.05 80 2</size></box></geometry>
+      <visual name="stripes"><pose>35.6 0 0 0 0 0</pose><geometry><box><size>0.6 80 2</size></box></geometry>
         <material><ambient>0.9 0.65 0.0 1</ambient><diffuse>1.0 0.75 0.0 1</diffuse><emissive>0.3 0.22 0.0 1</emissive></material></visual></link></model>
 
     <!-- ═══ SECTOR 3: Refinery Complex (north, centred 0, 450) ═══ -->
@@ -687,16 +743,16 @@
         <material><ambient>0.35 0.35 0.38 1</ambient><diffuse>0.44 0.44 0.48 1</diffuse><specular>0.12 0.12 0.14 1</specular>
         <pbr><metal><roughness>0.55</roughness><metalness>0.45</metalness></metal></pbr></material></visual>
       <!-- Hazard stripes -->
-      <visual name="stripe_top"><pose>0 40.1 25 0 0 0</pose><geometry><box><size>120 0.05 1.5</size></box></geometry>
+      <visual name="stripe_top"><pose>0 40.6 25 0 0 0</pose><geometry><box><size>120 0.6 1.5</size></box></geometry>
         <material><ambient>0.9 0.65 0.0 1</ambient><diffuse>1.0 0.75 0.0 1</diffuse><emissive>0.35 0.25 0.0 1</emissive></material></visual>
-      <visual name="stripe_mid"><pose>0 40.1 0 0 0 0</pose><geometry><box><size>120 0.05 1.5</size></box></geometry>
+      <visual name="stripe_mid"><pose>0 40.6 0 0 0 0</pose><geometry><box><size>120 0.6 1.5</size></box></geometry>
         <material><ambient>0.9 0.65 0.0 1</ambient><diffuse>1.0 0.75 0.0 1</diffuse><emissive>0.35 0.25 0.0 1</emissive></material></visual>
       <!-- Lit window grid (emergency lights on) -->
-      <visual name="wg1"><pose>-40 40.2 10 0 0 0</pose><geometry><box><size>20 0.02 4</size></box></geometry>
+      <visual name="wg1"><pose>-40 40.7 10 0 0 0</pose><geometry><box><size>20 0.5 4</size></box></geometry>
         <material><ambient>0.7 0.55 0.2 1</ambient><diffuse>0.95 0.78 0.25 1</diffuse><emissive>0.5 0.35 0.08 1</emissive></material></visual>
-      <visual name="wg2"><pose>0 40.2 15 0 0 0</pose><geometry><box><size>20 0.02 4</size></box></geometry>
+      <visual name="wg2"><pose>0 40.7 15 0 0 0</pose><geometry><box><size>20 0.5 4</size></box></geometry>
         <material><ambient>0.7 0.55 0.2 1</ambient><diffuse>0.95 0.78 0.25 1</diffuse><emissive>0.5 0.35 0.08 1</emissive></material></visual>
-      <visual name="wg3"><pose>40 40.2 20 0 0 0</pose><geometry><box><size>20 0.02 4</size></box></geometry>
+      <visual name="wg3"><pose>40 40.7 20 0 0 0</pose><geometry><box><size>20 0.5 4</size></box></geometry>
         <material><ambient>0.7 0.55 0.2 1</ambient><diffuse>0.95 0.78 0.25 1</diffuse><emissive>0.5 0.35 0.08 1</emissive></material></visual></link></model>
 
     <!-- Tall refinery flare stack (100m) at NW -->
@@ -728,28 +784,19 @@
     <model name="ref_flame_tip"><static>true</static><pose>-100 550 116 0 0 0</pose><link name="l">
       <visual name="v"><geometry><sphere><radius>2.8</radius></sphere></geometry>
         <material><ambient>0.85 0.20 0.05 1</ambient><diffuse>0.95 0.25 0.06 1</diffuse><emissive>0.70 0.15 0.03 1</emissive></material></visual></link></model>
-    <!-- Refinery smoke trail -->
-    <model name="ref_smoke"><static>true</static><pose>-100 550 122 0 0 0</pose><link name="l">
-      <particle_emitter name="emitter" type="point">
-        <emitting>true</emitting>
-        <particle_size>8 8 8</particle_size>
-        <rate>15</rate>
-        <duration>0</duration>
-        <lifetime>8</lifetime>
-        <min_velocity>4</min_velocity>
-        <max_velocity>8</max_velocity>
-        <scale_rate>2.5</scale_rate>
-        <color_start>0.30 0.20 0.15 1</color_start>
-        <color_end>0.08 0.08 0.10 0</color_end>
-        <material>
-          <diffuse>0.4 0.4 0.4 1</diffuse>
-          <pbr><metal><albedo_map>materials/textures/smoke.png</albedo_map></metal></pbr>
-        </material>
-        <color_range_image>materials/textures/smoke.png</color_range_image>
-      </particle_emitter></link></model>
     <light type="point" name="ref_flare_light"><cast_shadows>false</cast_shadows><pose>-100 550 100 0 0 0</pose>
       <diffuse>1.0 0.45 0.08 1</diffuse><specular>0.5 0.2 0.02 1</specular>
       <attenuation><range>300</range><constant>0.2</constant><linear>0.01</linear><quadratic>0.00005</quadratic></attenuation></light>
+
+    <!-- Refinery flare smoke trail -->
+    <model name="ref_smk1"><static>true</static><pose>-100 552 130 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>5</radius></sphere></geometry>
+      <material><ambient>0.16 0.14 0.13 1</ambient><diffuse>0.22 0.20 0.18 1</diffuse>
+      <emissive>0.04 0.03 0.02 1</emissive></material></visual></link></model>
+    <model name="ref_smk2"><static>true</static><pose>-96 555 145 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>7</radius></sphere></geometry>
+      <material><ambient>0.14 0.12 0.11 1</ambient><diffuse>0.20 0.18 0.16 1</diffuse>
+      <emissive>0.03 0.02 0.02 1</emissive></material></visual></link></model>
 
     <!-- Row of distillation columns -->
     <model name="ref_col_1"><static>true</static><pose>60 480 35 0 0 0</pose><link name="l">
