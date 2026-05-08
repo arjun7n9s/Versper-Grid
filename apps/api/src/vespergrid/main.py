@@ -145,6 +145,73 @@ async def serve_evidence(uuid: str, filename: str):
     return FileResponse(str(target), media_type="image/jpeg")
 
 
+@app.get("/api/feeds/latest/{source}")
+async def latest_feed_frame(source: str):
+    """Return the most recently uploaded frame whose filename starts with `source`.
+
+    `source` matches camera prefixes used by frame_sampler:
+      cctv_south  -> cctv_south_*.jpg
+      drone_d1    -> drone_d1_*.jpg
+      cctv_gate   -> cctv_gate_*.jpg
+
+    Scans all job directories newest-first and returns the first match.
+    Returns 404 if no frame has been uploaded yet.
+    """
+    best: Path | None = None
+    best_mtime: float = 0.0
+
+    if _EVIDENCE_DIR.exists():
+        for job_dir in sorted(
+            _EVIDENCE_DIR.iterdir(),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        ):
+            if not job_dir.is_dir():
+                continue
+            for f in job_dir.iterdir():
+                if f.is_file() and f.name.startswith(source) and f.suffix in (".jpg", ".jpeg", ".png"):
+                    mt = f.stat().st_mtime
+                    if mt > best_mtime:
+                        best_mtime = mt
+                        best = f
+            if best is not None:
+                break   # newest job dir already had a match — stop
+
+    if best is None:
+        raise HTTPException(status_code=404, detail=f"no frame for source '{source}'")
+
+    return FileResponse(
+        str(best),
+        media_type="image/jpeg",
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
+@app.get("/api/feeds")
+async def list_feeds():
+    """Return available feed sources and their latest-frame URLs."""
+    sources = ["cctv_south", "drone_d1", "cctv_gate"]
+    result = []
+    for src in sources:
+        found = False
+        if _EVIDENCE_DIR.exists():
+            for job_dir in sorted(
+                _EVIDENCE_DIR.iterdir(),
+                key=lambda p: p.stat().st_mtime,
+                reverse=True,
+            ):
+                if not job_dir.is_dir():
+                    continue
+                for f in job_dir.iterdir():
+                    if f.is_file() and f.name.startswith(src):
+                        found = True
+                        break
+                if found:
+                    break
+        result.append({"source": src, "available": found, "url": f"/api/feeds/latest/{src}"})
+    return result
+
+
 @app.get("/api/jobs")
 async def list_jobs(limit: int = 20) -> list[dict]:
     """Return recent job summaries — used by the dashboard ticker to discover

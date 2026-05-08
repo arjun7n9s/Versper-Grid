@@ -724,6 +724,20 @@ strong {
   color: #dbeeff;
 }
 
+.feed-tab.has-frame {
+  border-color: rgba(134, 215, 255, 0.36);
+}
+
+.feed-tab-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #ff6e40;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
 .feed-viewport {
   margin-top: 12px;
   aspect-ratio: 16 / 9;

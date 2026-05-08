@@ -457,60 +457,85 @@ const GAZEBO_FEEDS = [
 
 function GazeboFeedPanel() {
   const [activeFeed, setActiveFeed] = useState("cctv_south");
-  const [frameTs, setFrameTs] = useState<Record<string, number>>({});
+  // cachebust token per feed — bumped every 10s to force img reload
+  const [bust, setBust] = useState<Record<string, number>>({
+    cctv_south: Date.now(), drone_d1: Date.now(), cctv_gate: Date.now(),
+  });
+  // track which feeds actually have a frame available
+  const [available, setAvailable] = useState<Record<string, boolean>>({
+    cctv_south: false, drone_d1: false, cctv_gate: false,
+  });
 
-  // Poll each feed's latest evidence thumbnail from the API every 10s
-  // so the panel reflects what frame_sampler last submitted.
   useEffect(() => {
-    const tick = () =>
-      setFrameTs((_prev) => ({
-        cctv_south: Date.now(),
-        drone_d1:   Date.now(),
-        cctv_gate:  Date.now(),
-      }));
-    tick();
-    const id = window.setInterval(tick, 10_000);
+    const poll = async () => {
+      const now = Date.now();
+      setBust({ cctv_south: now, drone_d1: now, cctv_gate: now });
+      // Check /api/feeds to know which sources have frames
+      try {
+        const res = await fetch(`${API_BASE}/api/feeds`);
+        if (res.ok) {
+          const feeds: Array<{ source: string; available: boolean }> = await res.json();
+          const av: Record<string, boolean> = {};
+          for (const f of feeds) av[f.source] = f.available;
+          setAvailable(av);
+        }
+      } catch { /* silent */ }
+    };
+    poll();
+    const id = window.setInterval(poll, 10_000);
     return () => window.clearInterval(id);
   }, []);
 
   const feed = GAZEBO_FEEDS.find((f) => f.id === activeFeed)!;
+  const hasFrame = available[activeFeed];
+  const imgSrc = `${API_BASE}/api/feeds/latest/${activeFeed}?t=${bust[activeFeed]}`;
 
   return (
     <section className="panel gazebo-panel">
       <div className="panel-title">
         <Video size={18} />
         <span>Gazebo Live Feeds</span>
-        <span className="feed-live-dot" title="Streaming from Ignition Gazebo" />
+        {hasFrame && <span className="feed-live-dot" title="Frames received from frame_sampler" />}
       </div>
       <div className="feed-tabs">
         {GAZEBO_FEEDS.map((f) => (
           <button
             key={f.id}
-            className={`feed-tab ${activeFeed === f.id ? "active" : ""}`}
+            className={`feed-tab ${activeFeed === f.id ? "active" : ""} ${available[f.id] ? "has-frame" : ""}`}
             onClick={() => setActiveFeed(f.id)}
           >
             {f.label}
+            {available[f.id] && <span className="feed-tab-dot" />}
           </button>
         ))}
       </div>
       <div className="feed-viewport">
-        {/* ros_gz_bridge publishes /world/lng_terminal/model/…/image            */
-        /* We show the last frame submitted to evidence by frame_sampler.       */
-        /* When Gazebo is running the img src resolves via frame_sampler uploads */}
-        <div className="feed-placeholder">
-          <Video size={32} style={{ opacity: 0.28 }} />
-          <span>{feed.label}</span>
-          <small>{feed.topic}</small>
-          <small style={{ color: "#ffb181", marginTop: 6 }}>
-            Live when Gazebo + frame_sampler running
-          </small>
-        </div>
+        {hasFrame ? (
+          <img
+            key={imgSrc}
+            src={imgSrc}
+            alt={`${feed.label} latest frame`}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = "none";
+              setAvailable((prev) => ({ ...prev, [activeFeed]: false }));
+            }}
+          />
+        ) : (
+          <div className="feed-placeholder">
+            <Video size={32} style={{ opacity: 0.28 }} />
+            <span>{feed.label}</span>
+            <small>{feed.topic}</small>
+            <small style={{ color: "#818679", marginTop: 6 }}>
+              Waiting for Gazebo + frame_sampler
+            </small>
+          </div>
+        )}
       </div>
       <div className="feed-meta">
         <small>ROS2 topic</small>
         <code>{feed.topic}</code>
         <small style={{ marginTop: 6 }}>Last polled</small>
-        <code>{frameTs[activeFeed] ? new Date(frameTs[activeFeed]).toLocaleTimeString() : "—"}</code>
+        <code>{new Date(bust[activeFeed]).toLocaleTimeString()}</code>
       </div>
     </section>
   );
