@@ -67,9 +67,9 @@ app.add_middleware(
 
 @app.get("/api/health")
 async def health() -> dict[str, object]:
-    import torch
     cuda_ok = False
     try:
+        import torch
         cuda_ok = torch.cuda.is_available()
     except Exception:
         pass
