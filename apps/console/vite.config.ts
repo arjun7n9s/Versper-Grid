@@ -8,7 +8,10 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/api": "http://127.0.0.1:8742"
+      "/api": {
+        target: process.env.VITE_API_PROXY ?? "http://165.245.143.11",
+        changeOrigin: true
+      }
     }
   }
 });

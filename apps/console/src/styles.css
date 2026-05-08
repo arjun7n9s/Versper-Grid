@@ -673,6 +673,236 @@ strong {
   font-weight: 700;
 }
 
+/* ── Feed strip (Gazebo panel + ticker) ─────────────────────────────────── */
+.feed-strip {
+  display: grid;
+  grid-template-columns: minmax(340px, 0.9fr) minmax(0, 1fr);
+  gap: 18px;
+  margin-top: 18px;
+}
+
+/* ── Gazebo Feed Panel ───────────────────────────────────────────────────── */
+.gazebo-panel .panel-title {
+  gap: 10px;
+}
+
+.feed-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ff6e40;
+  box-shadow: 0 0 10px rgba(255, 110, 64, 0.85);
+  animation: live-pulse 1.6s ease-in-out infinite;
+  margin-left: auto;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+.feed-tabs {
+  display: flex;
+  gap: 6px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.feed-tab {
+  padding: 5px 11px;
+  border: 1px solid rgba(184, 222, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: #b8b9ad;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.feed-tab.active {
+  border-color: rgba(134, 215, 255, 0.7);
+  background: rgba(134, 215, 255, 0.1);
+  color: #dbeeff;
+}
+
+.feed-viewport {
+  margin-top: 12px;
+  aspect-ratio: 16 / 9;
+  background: #0a0c0b;
+  border: 1px solid rgba(184, 222, 255, 0.1);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.feed-viewport img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feed-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #818679;
+  text-align: center;
+  padding: 20px;
+}
+
+.feed-placeholder span {
+  font-size: 14px;
+  font-weight: 700;
+  color: #86d7ff;
+}
+
+.feed-meta {
+  margin-top: 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.feed-meta code {
+  font-size: 12px;
+  color: #ffb181;
+  background: rgba(255, 177, 129, 0.08);
+  padding: 3px 7px;
+  border: 1px solid rgba(255, 177, 129, 0.18);
+}
+
+/* ── Pipeline Ticker ─────────────────────────────────────────────────────── */
+.ticker-panel {
+  overflow: hidden;
+}
+
+.ticker-empty {
+  margin-top: 16px;
+  font-size: 13px;
+  color: #818679;
+}
+
+.ticker-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.ticker-row {
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.ticker-row.complete {
+  border-color: rgba(134, 215, 255, 0.3);
+  background: rgba(134, 215, 255, 0.05);
+}
+
+.ticker-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.ticker-bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #86d7ff, #ff9a64);
+  transition: width 300ms ease-out;
+}
+
+.ticker-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ticker-meta code {
+  font-size: 11px;
+  color: #ffb181;
+}
+
+.ticker-stage {
+  font-size: 11px;
+  font-weight: 800;
+  color: #86d7ff;
+  letter-spacing: 0.06em;
+}
+
+.ticker-row p {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #b8b9ad;
+}
+
+/* ── Ingest upload controls ──────────────────────────────────────────────── */
+.ingest-upload-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  align-items: center;
+}
+
+.upload-pick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px dashed rgba(184, 222, 255, 0.3);
+  background: rgba(184, 222, 255, 0.04);
+  color: #86d7ff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.upload-pick-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.upload-clear-btn {
+  min-height: 32px;
+  width: 32px;
+  border: 1px solid rgba(255, 154, 100, 0.3);
+  background: rgba(255, 154, 100, 0.08);
+  color: #ff9a64;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.ingest-file-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.ingest-file-chips span {
+  padding: 3px 8px;
+  border: 1px solid rgba(134, 215, 255, 0.22);
+  background: rgba(134, 215, 255, 0.06);
+  color: #86d7ff;
+  font-size: 11px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1180px) {
+  .feed-strip {
+    grid-template-columns: 1fr;
+  }
+}
+
 @keyframes pulse {
   0%,
   100% {

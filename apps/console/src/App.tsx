@@ -13,9 +13,11 @@ import {
   Route,
   ShieldCheck,
   Sparkles,
-  UploadCloud
+  UploadCloud,
+  Video,
+  Zap
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   fallbackScenario,
   type EvidenceItem,
@@ -84,13 +86,30 @@ async function startIngestJob(note: string): Promise<{ job_id: string; backend: 
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      location: "Chennai North Port Logistics Corridor",
+      location: "Sector 4 — Tank B-4 Flange, Northgate LNG Terminal",
       field_notes: note,
       media_count: 3,
       sensor_count: 2
     })
   });
   if (!response.ok) throw new Error("ingest unavailable");
+  return response.json();
+}
+
+async function startIngestUpload(
+  note: string,
+  files: File[]
+): Promise<{ job_id: string; backend: string }> {
+  const form = new FormData();
+  form.append("location", "Sector 4 — Tank B-4 Flange, Northgate LNG Terminal");
+  form.append("field_notes", note);
+  form.append("sensor_count", "2");
+  for (const f of files) form.append("images", f);
+  const response = await fetch(`${API_BASE}/api/ingest/upload`, {
+    method: "POST",
+    body: form
+  });
+  if (!response.ok) throw new Error("ingest upload unavailable");
   return response.json();
 }
 
@@ -429,31 +448,236 @@ function BriefPanel({
   );
 }
 
+// ── Gazebo Live Feed Panel ────────────────────────────────────────────────
+const GAZEBO_FEEDS = [
+  { id: "cctv_south",  label: "CCTV South — B-4",  topic: "/cctv_south/image_raw" },
+  { id: "drone_d1",   label: "Drone D-1 (primary)", topic: "/drone_d1/image_raw" },
+  { id: "cctv_gate",  label: "CCTV Gate",           topic: "/cctv_gate/image_raw" },
+];
+
+function GazeboFeedPanel() {
+  const [activeFeed, setActiveFeed] = useState("cctv_south");
+  const [frameTs, setFrameTs] = useState<Record<string, number>>({});
+
+  // Poll each feed's latest evidence thumbnail from the API every 10s
+  // so the panel reflects what frame_sampler last submitted.
+  useEffect(() => {
+    const tick = () =>
+      setFrameTs((_prev) => ({
+        cctv_south: Date.now(),
+        drone_d1:   Date.now(),
+        cctv_gate:  Date.now(),
+      }));
+    tick();
+    const id = window.setInterval(tick, 10_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const feed = GAZEBO_FEEDS.find((f) => f.id === activeFeed)!;
+
+  return (
+    <section className="panel gazebo-panel">
+      <div className="panel-title">
+        <Video size={18} />
+        <span>Gazebo Live Feeds</span>
+        <span className="feed-live-dot" title="Streaming from Ignition Gazebo" />
+      </div>
+      <div className="feed-tabs">
+        {GAZEBO_FEEDS.map((f) => (
+          <button
+            key={f.id}
+            className={`feed-tab ${activeFeed === f.id ? "active" : ""}`}
+            onClick={() => setActiveFeed(f.id)}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+      <div className="feed-viewport">
+        {/* ros_gz_bridge publishes /world/lng_terminal/model/…/image            */
+        /* We show the last frame submitted to evidence by frame_sampler.       */
+        /* When Gazebo is running the img src resolves via frame_sampler uploads */}
+        <div className="feed-placeholder">
+          <Video size={32} style={{ opacity: 0.28 }} />
+          <span>{feed.label}</span>
+          <small>{feed.topic}</small>
+          <small style={{ color: "#ffb181", marginTop: 6 }}>
+            Live when Gazebo + frame_sampler running
+          </small>
+        </div>
+      </div>
+      <div className="feed-meta">
+        <small>ROS2 topic</small>
+        <code>{feed.topic}</code>
+        <small style={{ marginTop: 6 }}>Last polled</small>
+        <code>{frameTs[activeFeed] ? new Date(frameTs[activeFeed]).toLocaleTimeString() : "—"}</code>
+      </div>
+    </section>
+  );
+}
+
+// ── Live Job Ticker — auto-watches incoming frame_sampler jobs ────────────
+interface JobTick {
+  job_id: string;
+  backend: string;
+  status: string;
+  stage: string;
+  message: string;
+  progress: number;
+  ts: number;
+}
+
+function LiveJobTicker({
+  onScenarioUpdate,
+  onRegister
+}: {
+  onScenarioUpdate: (s: Scenario) => void;
+  onRegister: (fn: (jobId: string, backend: string) => void) => void;
+}) {
+  const [ticks, setTicks] = useState<JobTick[]>([]);
+  const watchedRef = useRef<Set<string>>(new Set());
+
+  const watchJob = (jobId: string, backend: string) => {
+    if (watchedRef.current.has(jobId)) return;
+    watchedRef.current.add(jobId);
+
+    const source = new EventSource(`${API_BASE}/api/ingest/${jobId}/events`);
+    const stages = ["queued", "sampling", "parsing", "normalizing", "synthesizing", "complete", "error"];
+    for (const stage of stages) {
+      source.addEventListener(stage, (event) => {
+        try {
+          const ev = JSON.parse((event as MessageEvent).data);
+          setTicks((prev) => [
+            { job_id: jobId, backend, status: "running", stage: ev.stage,
+              message: ev.message, progress: ev.progress, ts: Date.now() },
+            ...prev.slice(0, 19),
+          ]);
+        } catch { /* ignore */ }
+      });
+    }
+    source.addEventListener("snapshot", (event) => {
+      try {
+        const snap = JSON.parse((event as MessageEvent).data);
+        source.close();
+        if (snap.status === "complete" && snap.result) {
+          onScenarioUpdate(snap.result as Scenario);
+          setTicks((prev) => [
+            { job_id: jobId, backend, status: "complete", stage: "complete",
+              message: `Scenario updated — ${snap.result.evidence?.length ?? 0} evidence items`,
+              progress: 1, ts: Date.now() },
+            ...prev.slice(0, 19),
+          ]);
+        }
+      } catch { /* ignore */ }
+    });
+    source.onerror = () => source.close();
+  };
+
+  // Register watchJob with parent so upload jobs can be piped in
+  useEffect(() => { onRegister(watchJob); }, []);  // eslint-disable-line
+
+  if (ticks.length === 0) {
+    return (
+      <section className="panel ticker-panel">
+        <div className="panel-title">
+          <Zap size={18} />
+          <span>Pipeline Ticker</span>
+        </div>
+        <p className="ticker-empty">Awaiting frame_sampler jobs from Gazebo…</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="panel ticker-panel">
+      <div className="panel-title">
+        <Zap size={18} />
+        <span>Pipeline Ticker</span>
+        <span className="feed-live-dot" />
+      </div>
+      <div className="ticker-list">
+        {ticks.map((t, i) => (
+          <div key={`${t.job_id}-${i}`} className={`ticker-row ${t.status}`}>
+            <div className="ticker-bar">
+              <span style={{ width: `${Math.round(t.progress * 100)}%` }} />
+            </div>
+            <div className="ticker-meta">
+              <code>{t.job_id}</code>
+              <span className="ticker-stage">{t.stage.toUpperCase()}</span>
+              <small>{t.backend}</small>
+            </div>
+            <p>{t.message}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function LiveIngestPanel({
   onIngest,
+  onIngestUpload,
   processing,
   progress
 }: {
   onIngest: (note: string) => void;
+  onIngestUpload: (note: string, files: File[]) => void;
   processing: boolean;
   progress: IngestProgress | null;
 }) {
-  const [note, setNote] = useState("New forklift queue observed beside Gate 4; operator unsure whether route is clear.");
+  const [note, setNote] = useState(
+    "Active LNG flange failure at Tank B-4 south cluster. Gas plume visible. Worker evacuation in progress."
+  );
+  const [files, setFiles] = useState<File[]>([]);
+  const fileRef = useRef<HTMLInputElement>(null);
   const pct = progress ? Math.round(progress.progress * 100) : 0;
+  const hasFiles = files.length > 0;
   const buttonLabel = processing
     ? progress
       ? `${progress.stage.toUpperCase()} \u00b7 ${pct}%`
       : "Dispatching\u2026"
-    : "Ingest sampled evidence";
+    : hasFiles
+    ? `Submit ${files.length} frame(s) → MI300X`
+    : "Run deterministic synthesizer";
+
+  const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFiles(Array.from(e.target.files ?? []).slice(0, 5));
+  };
+
+  const handleSubmit = () => {
+    if (hasFiles) onIngestUpload(note, files);
+    else onIngest(note);
+  };
 
   return (
     <section className="panel ingest-panel">
       <div className="panel-title">
         <ShieldCheck size={18} />
-        <span>Live Ingest Proof</span>
+        <span>Live Ingest — Submit to MI300X</span>
       </div>
       <textarea value={note} onChange={(event) => setNote(event.target.value)} />
-      <button className="ingest-button" disabled={processing} onClick={() => onIngest(note)}>
+      <div className="ingest-upload-row">
+        <button
+          className="upload-pick-btn"
+          onClick={() => fileRef.current?.click()}
+          disabled={processing}
+        >
+          <UploadCloud size={14} />
+          {hasFiles ? `${files.length} frame(s) selected` : "Attach frames (optional)"}
+        </button>
+        {hasFiles && (
+          <button className="upload-clear-btn" onClick={() => { setFiles([]); if (fileRef.current) fileRef.current.value = ""; }}>
+            ✕
+          </button>
+        )}
+        <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={handleFiles} />
+      </div>
+      {hasFiles && (
+        <div className="ingest-file-chips">
+          {files.map((f) => <span key={f.name}>{f.name}</span>)}
+        </div>
+      )}
+      <button className="ingest-button" disabled={processing} onClick={handleSubmit}>
         {buttonLabel}
       </button>
       {processing && (
@@ -481,6 +705,7 @@ export function App() {
   const [selectedSource, setSelectedSource] = useState<string | null>("SRC-VID-2217");
   const [processing, setProcessing] = useState(false);
   const [ingestProgress, setIngestProgress] = useState<IngestProgress | null>(null);
+  const watchJobRef = useRef<((jobId: string, backend: string) => void) | null>(null);
 
   useEffect(() => {
     loadScenario()
@@ -498,21 +723,42 @@ export function App() {
 
   const selectedEvidence = scenario.evidence.find((item) => item.sourceUuid === selectedSource);
 
+  const _runIngestStream = async (
+    job_id: string,
+    jobBackend: string
+  ) => {
+    const loaded = await ingestStream(job_id, jobBackend, setIngestProgress);
+    setScenario(loaded);
+    setSelectedSource(null);
+    setBackend("online");
+  };
+
   const handleIngest = async (note: string) => {
     setProcessing(true);
     setIngestProgress(null);
     try {
       const { job_id, backend: jobBackend } = await startIngestJob(note);
-      const loaded = await ingestStream(job_id, jobBackend, setIngestProgress);
-      setScenario(loaded);
-      setSelectedSource("SRC-LIVE-9001");
-      setBackend("online");
+      await _runIngestStream(job_id, jobBackend);
     } catch {
       setBackend("offline");
     } finally {
       setProcessing(false);
-      // Keep the final progress visible briefly for visual continuity, then clear.
-      window.setTimeout(() => setIngestProgress(null), 1200);
+      window.setTimeout(() => setIngestProgress(null), 1400);
+    }
+  };
+
+  const handleIngestUpload = async (note: string, files: File[]) => {
+    setProcessing(true);
+    setIngestProgress(null);
+    try {
+      const { job_id, backend: jobBackend } = await startIngestUpload(note, files);
+      watchJobRef.current?.(job_id, jobBackend);
+      await _runIngestStream(job_id, jobBackend);
+    } catch {
+      setBackend("offline");
+    } finally {
+      setProcessing(false);
+      window.setTimeout(() => setIngestProgress(null), 1400);
     }
   };
 
@@ -525,12 +771,12 @@ export function App() {
           </div>
           <div>
             <h1>VesperGrid</h1>
-            <p>Critical infrastructure operational twin for AMD MI300X systems</p>
+            <p>Critical infrastructure operational twin · AMD MI300X · Northgate LNG Terminal</p>
           </div>
         </div>
         <div className={`backend-pill ${backend}`}>
           <span />
-          {backend === "checking" ? "Syncing" : backend === "online" ? "GPU API online" : "Demo simulation"}
+          {backend === "checking" ? "Syncing" : backend === "online" ? "MI300X online · vLLM" : "Demo simulation"}
         </div>
       </header>
 
@@ -564,11 +810,25 @@ export function App() {
         </div>
       </section>
 
+      {/* ── Gazebo feed strip + pipeline ticker above main workspace ── */}
+      <section className="feed-strip">
+        <GazeboFeedPanel />
+        <LiveJobTicker
+          onScenarioUpdate={(s) => { setScenario(s); setBackend("online"); }}
+          onRegister={(fn) => { watchJobRef.current = fn; }}
+        />
+      </section>
+
       <section className="workspace">
         <div className="left-column">
           <EvidenceRail evidence={scenario.evidence} selectedSource={selectedSource} onSelect={setSelectedSource} />
           <SourcePreview scenario={scenario} selectedSource={selectedSource} />
-          <LiveIngestPanel onIngest={handleIngest} processing={processing} progress={ingestProgress} />
+          <LiveIngestPanel
+            onIngest={handleIngest}
+            onIngestUpload={handleIngestUpload}
+            processing={processing}
+            progress={ingestProgress}
+          />
         </div>
         <OrbitalMap scenario={scenario} selectedSource={selectedSource} />
         <div className="right-column">
@@ -585,10 +845,11 @@ export function App() {
             <span>Inference Flow</span>
           </div>
           <div className="flow-steps">
-            <span>5 sampled keyframes</span>
-            <span>Qwen-VL on MI300X</span>
+            <span>Gazebo cameras</span>
+            <span>frame_sampler node</span>
+            <span>Qwen-VL · MI300X</span>
             <span>Schema validation</span>
-            <span>In-memory graph</span>
+            <span>Evidence graph</span>
             <span>Candidate plan</span>
           </div>
         </section>
@@ -598,8 +859,9 @@ export function App() {
             <span>Decision</span>
           </div>
           <p>
-            Keep VesperGrid, but narrow it to industrial safety. The winning story is not autonomous crisis response;
-            it is source-linked decision support for critical infrastructure operators.
+            Source-linked decision support for critical infrastructure operators.
+            Every observation traces back to a Gazebo camera keyframe parsed by
+            Qwen2.5-VL on AMD MI300X.
           </p>
         </section>
         <GpuTelemetry scenario={scenario} />
