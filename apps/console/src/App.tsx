@@ -468,8 +468,6 @@ function GazeboFeedPanel() {
 
   useEffect(() => {
     const poll = async () => {
-      const now = Date.now();
-      setBust({ cctv_south: now, drone_d1: now, cctv_gate: now });
       // Check /api/feeds to know which sources have frames
       try {
         const res = await fetch(`${API_BASE}/api/feeds`);
@@ -480,9 +478,11 @@ function GazeboFeedPanel() {
           setAvailable(av);
         }
       } catch { /* silent */ }
+      // always bump bust so img refreshes
+      setBust({ cctv_south: Date.now(), drone_d1: Date.now(), cctv_gate: Date.now() });
     };
     poll();
-    const id = window.setInterval(poll, 10_000);
+    const id = window.setInterval(poll, 5_000);
     return () => window.clearInterval(id);
   }, []);
 
