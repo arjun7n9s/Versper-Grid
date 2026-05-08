@@ -235,49 +235,57 @@
         <material><ambient>0.85 0.38 0.08 1</ambient><diffuse>0.95 0.45 0.10 1</diffuse><emissive>0.40 0.14 0.0 1</emissive></material></visual>
     </link></model>
 
-    <!-- ═══ B-4 GAS PLUME: opaque emissive geometry (no transparency = no white-quad bug) ═══ -->
-    <!-- Tall vertical mist column — series of large opaque grey-green spheres, sized for visibility -->
-    <model name="plume_lvl1"><static>true</static><pose>68 -64 3 0 0 0</pose><link name="l"><visual name="v">
-      <geometry><sphere><radius>2.5</radius></sphere></geometry>
-      <material><ambient>0.62 0.66 0.62 1</ambient><diffuse>0.70 0.74 0.70 1</diffuse><specular>0.0 0.0 0.0 1</specular>
+    <!-- ═══ B-4 GAS PLUME: opaque core, semi-transparent foggy outer (no z-fighting) ═══ -->
+    <!-- Core column: smaller than tank radius (8m), opaque inner → translucent outer -->
+    <model name="plume_lvl1"><static>true</static><pose>68 -64 2.5 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>1.4</radius></sphere></geometry>
+      <material><ambient>0.62 0.66 0.62 1</ambient><diffuse>0.70 0.74 0.70 1</diffuse>
       <emissive>0.18 0.20 0.18 1</emissive></material></visual></link></model>
-    <model name="plume_lvl2"><static>true</static><pose>68.5 -63.5 6.5 0 0 0</pose><link name="l"><visual name="v">
-      <geometry><sphere><radius>3.0</radius></sphere></geometry>
+    <model name="plume_lvl2"><static>true</static><pose>68.4 -63.5 5 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>1.7</radius></sphere></geometry>
       <material><ambient>0.65 0.68 0.65 1</ambient><diffuse>0.73 0.76 0.73 1</diffuse>
       <emissive>0.20 0.22 0.20 1</emissive></material></visual></link></model>
-    <model name="plume_lvl3"><static>true</static><pose>69.2 -62.8 10.5 0 0 0</pose><link name="l"><visual name="v">
-      <geometry><sphere><radius>3.6</radius></sphere></geometry>
-      <material><ambient>0.68 0.71 0.68 1</ambient><diffuse>0.76 0.79 0.76 1</diffuse>
-      <emissive>0.22 0.24 0.22 1</emissive></material></visual></link></model>
-    <model name="plume_lvl4"><static>true</static><pose>70.1 -61.9 15 0 0 0</pose><link name="l"><visual name="v">
-      <geometry><sphere><radius>4.2</radius></sphere></geometry>
-      <material><ambient>0.70 0.73 0.70 1</ambient><diffuse>0.78 0.81 0.78 1</diffuse>
-      <emissive>0.24 0.26 0.24 1</emissive></material></visual></link></model>
-    <model name="plume_lvl5"><static>true</static><pose>71.3 -60.5 20 0 0 0</pose><link name="l"><visual name="v">
-      <geometry><sphere><radius>4.8</radius></sphere></geometry>
-      <material><ambient>0.72 0.75 0.72 1</ambient><diffuse>0.80 0.83 0.80 1</diffuse>
-      <emissive>0.26 0.28 0.26 1</emissive></material></visual></link></model>
-    <model name="plume_lvl6"><static>true</static><pose>72.8 -58.7 26 0 0 0</pose><link name="l"><visual name="v">
-      <geometry><sphere><radius>5.5</radius></sphere></geometry>
-      <material><ambient>0.74 0.76 0.74 1</ambient><diffuse>0.82 0.84 0.82 1</diffuse>
-      <emissive>0.27 0.29 0.27 1</emissive></material></visual></link></model>
-    <model name="plume_lvl7"><static>true</static><pose>74.5 -56.5 32 0 0 0</pose><link name="l"><visual name="v">
-      <geometry><sphere><radius>6.2</radius></sphere></geometry>
-      <material><ambient>0.74 0.76 0.74 1</ambient><diffuse>0.82 0.84 0.82 1</diffuse>
-      <emissive>0.28 0.30 0.28 1</emissive></material></visual></link></model>
-    <!-- Ground-level dispersal blobs -->
-    <model name="haze_a"><static>true</static><pose>64 -64 0.8 0 0 0</pose><link name="l"><visual name="v">
-      <geometry><sphere><radius>2.0</radius></sphere></geometry>
-      <material><ambient>0.60 0.64 0.60 1</ambient><diffuse>0.68 0.72 0.68 1</diffuse>
+    <model name="plume_lvl3"><static>true</static><pose>69.0 -62.8 8 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>1.95</radius></sphere></geometry>
+      <transparency>0.15</transparency>
+      <material><ambient>0.68 0.71 0.68 0.85</ambient><diffuse>0.76 0.79 0.76 0.85</diffuse>
+      <emissive>0.20 0.22 0.20 1</emissive></material></visual></link></model>
+    <model name="plume_lvl4"><static>true</static><pose>69.8 -61.8 11.5 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>2.2</radius></sphere></geometry>
+      <transparency>0.35</transparency>
+      <material><ambient>0.70 0.73 0.70 0.65</ambient><diffuse>0.78 0.81 0.78 0.65</diffuse>
+      <emissive>0.18 0.20 0.18 1</emissive></material></visual></link></model>
+    <model name="plume_lvl5"><static>true</static><pose>70.9 -60.4 15.5 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>2.5</radius></sphere></geometry>
+      <transparency>0.55</transparency>
+      <material><ambient>0.72 0.75 0.72 0.45</ambient><diffuse>0.80 0.83 0.80 0.45</diffuse>
       <emissive>0.16 0.18 0.16 1</emissive></material></visual></link></model>
-    <model name="haze_b"><static>true</static><pose>71 -67 0.6 0 0 0</pose><link name="l"><visual name="v">
-      <geometry><sphere><radius>1.6</radius></sphere></geometry>
-      <material><ambient>0.60 0.64 0.60 1</ambient><diffuse>0.68 0.72 0.68 1</diffuse>
-      <emissive>0.16 0.18 0.16 1</emissive></material></visual></link></model>
-    <model name="haze_c"><static>true</static><pose>67 -69 0.5 0 0 0</pose><link name="l"><visual name="v">
+    <model name="plume_lvl6"><static>true</static><pose>72.2 -58.6 19.5 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>2.8</radius></sphere></geometry>
+      <transparency>0.72</transparency>
+      <material><ambient>0.74 0.76 0.74 0.28</ambient><diffuse>0.82 0.84 0.82 0.28</diffuse>
+      <emissive>0.14 0.16 0.14 1</emissive></material></visual></link></model>
+    <model name="plume_lvl7"><static>true</static><pose>73.8 -56.6 24 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>3.0</radius></sphere></geometry>
+      <transparency>0.85</transparency>
+      <material><ambient>0.75 0.77 0.75 0.15</ambient><diffuse>0.83 0.85 0.83 0.15</diffuse>
+      <emissive>0.12 0.14 0.12 1</emissive></material></visual></link></model>
+    <!-- Ground haze (low, foggy spread) -->
+    <model name="haze_a"><static>true</static><pose>64.5 -64 0.6 0 0 0</pose><link name="l"><visual name="v">
       <geometry><sphere><radius>1.4</radius></sphere></geometry>
-      <material><ambient>0.60 0.64 0.60 1</ambient><diffuse>0.68 0.72 0.68 1</diffuse>
-      <emissive>0.16 0.18 0.16 1</emissive></material></visual></link></model>
+      <transparency>0.55</transparency>
+      <material><ambient>0.62 0.66 0.62 0.45</ambient><diffuse>0.70 0.74 0.70 0.45</diffuse>
+      <emissive>0.14 0.16 0.14 1</emissive></material></visual></link></model>
+    <model name="haze_b"><static>true</static><pose>70.5 -67 0.5 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>1.2</radius></sphere></geometry>
+      <transparency>0.65</transparency>
+      <material><ambient>0.62 0.66 0.62 0.35</ambient><diffuse>0.70 0.74 0.70 0.35</diffuse>
+      <emissive>0.14 0.16 0.14 1</emissive></material></visual></link></model>
+    <model name="haze_c"><static>true</static><pose>67 -68.5 0.4 0 0 0</pose><link name="l"><visual name="v">
+      <geometry><sphere><radius>1.0</radius></sphere></geometry>
+      <transparency>0.7</transparency>
+      <material><ambient>0.62 0.66 0.62 0.30</ambient><diffuse>0.70 0.74 0.70 0.30</diffuse>
+      <emissive>0.14 0.16 0.14 1</emissive></material></visual></link></model>
 
     <!-- Pipe rack across Sector 1 -->
     <model name="rk1"><static>true</static><pose>-90 0 4.5 0 0 0</pose><link name="l">
@@ -544,8 +552,10 @@
         <material><ambient>0.58 0.48 0.08 1</ambient><diffuse>0.72 0.60 0.10 1</diffuse></material></visual></link></model>
 
     <!-- ═══ DRONE D-1 (PRIMARY): large, hovering near B-4 incident, has the camera feed ═══ -->
-    <model name="drone_d1"><static>true</static><pose>72 -50 18 0 0 -2.4</pose>
+    <model name="drone_d1"><static>false</static><pose>72 -50 18 0 0 -2.4</pose>
       <link name="base_link">
+        <gravity>false</gravity>
+        <inertial><mass>1.0</mass><inertia><ixx>0.05</ixx><iyy>0.05</iyy><izz>0.05</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
         <visual name="frame"><geometry><box><size>0.55 0.55 0.16</size></box></geometry>
           <material><ambient>0.08 0.08 0.10 1</ambient><diffuse>0.13 0.13 0.16 1</diffuse>
           <pbr><metal><roughness>0.24</roughness><metalness>0.82</metalness></metal></pbr></material></visual>
@@ -586,6 +596,14 @@
           <material><ambient>0.0 0.9 0.0 1</ambient><diffuse>0.0 1.0 0.0 1</diffuse><emissive>0.0 0.85 0.0 1</emissive></material></visual>
         <visual name="nav_white"><pose>0 0 0.10 0 0 0</pose><geometry><sphere><radius>0.035</radius></sphere></geometry>
           <material><ambient>1.0 1.0 1.0 1</ambient><diffuse>1.0 1.0 1.0 1</diffuse><emissive>0.9 0.9 0.9 1</emissive></material></visual>
+        <!-- BEACON: bright red strobe on top, animator toggles its visibility via pose dip -->
+        <visual name="beacon"><pose>0 0 0.18 0 0 0</pose><geometry><sphere><radius>0.07</radius></sphere></geometry>
+          <material><ambient>1.0 0.05 0.05 1</ambient><diffuse>1.0 0.10 0.10 1</diffuse>
+          <emissive>1.0 0.0 0.0 1</emissive></material></visual>
+        <visual name="beacon_glow"><pose>0 0 0.18 0 0 0</pose><geometry><sphere><radius>0.14</radius></sphere></geometry>
+          <transparency>0.7</transparency>
+          <material><ambient>1.0 0.1 0.1 0.3</ambient><diffuse>1.0 0.15 0.15 0.3</diffuse>
+          <emissive>0.8 0.0 0.0 1</emissive></material></visual>
         <collision name="c"><geometry><box><size>0.55 0.55 0.16</size></box></geometry></collision>
         <sensor name="drone_cam" type="camera">
           <pose>0 0 -0.18 0 1.5707 0</pose>
@@ -600,7 +618,9 @@
       </link></model>
 
     <!-- DRONE D-2: smaller, parked on the launch pad — NO camera feed -->
-    <model name="drone_d2"><static>true</static><pose>0 10 0.18 0 0 0.4</pose><link name="l">
+    <model name="drone_d2"><static>false</static><pose>0 10 0.18 0 0 0.4</pose><link name="l">
+      <gravity>false</gravity>
+      <inertial><mass>0.8</mass><inertia><ixx>0.04</ixx><iyy>0.04</iyy><izz>0.04</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
       <visual name="frame"><geometry><box><size>0.36 0.36 0.10</size></box></geometry>
         <material><ambient>0.10 0.10 0.10 1</ambient><diffuse>0.16 0.16 0.18 1</diffuse>
         <pbr><metal><roughness>0.30</roughness><metalness>0.7</metalness></metal></pbr></material></visual>
@@ -624,7 +644,9 @@
     </link></model>
 
     <!-- DRONE D-3: medium, patrolling Sector 2 — NO camera feed -->
-    <model name="drone_d3"><static>true</static><pose>440 30 25 0 0 1.2</pose><link name="l">
+    <model name="drone_d3"><static>false</static><pose>440 30 25 0 0 1.2</pose><link name="l">
+      <gravity>false</gravity>
+      <inertial><mass>0.9</mass><inertia><ixx>0.045</ixx><iyy>0.045</iyy><izz>0.045</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
       <visual name="frame"><geometry><box><size>0.45 0.45 0.13</size></box></geometry>
         <material><ambient>0.10 0.10 0.10 1</ambient><diffuse>0.16 0.16 0.18 1</diffuse>
         <pbr><metal><roughness>0.28</roughness><metalness>0.75</metalness></metal></pbr></material></visual>

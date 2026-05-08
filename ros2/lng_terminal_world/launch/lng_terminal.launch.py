@@ -61,6 +61,15 @@ def generate_launch_description():
         remappings=[("/drone_d1/base_link/drone_cam/image", "/drone_cam/image_raw")],
     )
 
+    # Drone pose animator — uses ign service set_pose to move D-1/D-2/D-3.
+    # Reusable strategy for any future pose publisher.
+    drone_animator = Node(
+        package="lng_terminal_world",
+        executable="drone_animator.py",
+        name="drone_animator",
+        output="screen",
+    )
+
     return LaunchDescription([
         set_render_engine,
         set_render_engine_gui,
@@ -69,4 +78,5 @@ def generate_launch_description():
         gz_sim,
         bridge_cctv,
         bridge_drone,
+        drone_animator,
     ])
