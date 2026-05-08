@@ -27,7 +27,8 @@ from sse_starlette.sse import EventSourceResponse
 
 from .engine import runtime_plan, sector_4_containment
 from .ingest import IngestJob, registry, schedule
-from .models import IngestRequest, Scenario
+from .models import IngestRequest, Scenario, TranscribeResponse
+from .stt import transcribe_audio
 from .vlm_client import is_enabled as vllm_enabled
 
 logger = logging.getLogger(__name__)
@@ -95,16 +96,22 @@ async def scenario() -> Scenario:
 @app.post("/api/ingest/upload")
 async def ingest_upload(
     images: list[UploadFile] = File(default=[]),
+    audio: list[UploadFile] = File(default=[]),
     location: str = Form(default="Unknown location"),
     field_notes: str = Form(default=""),
     sensor_count: int = Form(default=0),
+    sensor_trace: str = Form(default="[]"),
+    voice_manifest: str = Form(default="[]"),
 ) -> dict:
-    """Real ingest path: accepts multipart image files from the ROS2 bridge."""
+    """Real ingest path: accepts camera frames, voice clips, and sensor traces."""
+    sensor_samples = _parse_json_list(sensor_trace, "sensor_trace")
+    voice_reports = _parse_json_list(voice_manifest, "voice_manifest")
     req = IngestRequest(
         location=location,
         field_notes=field_notes,
         media_count=len(images),
-        sensor_count=sensor_count,
+        sensor_count=max(sensor_count, len(sensor_samples)),
+        sensor_trace=sensor_samples,
     )
     job = await registry.create(req)
 
@@ -120,9 +127,36 @@ async def ingest_upload(
         logger.info("Saved uploaded image: %s", dest)
 
     job.image_paths = saved_paths
+    audio_paths = []
+    for upload in audio:
+        safe_name = Path(upload.filename or f"voice_{len(audio_paths)}.webm").name
+        dest = job_dir / safe_name
+        with dest.open("wb") as f:
+            shutil.copyfileobj(upload.file, f)
+        audio_paths.append(dest)
+        logger.info("Saved uploaded audio: %s", dest)
+
+    job.audio_paths = audio_paths
+    job.voice_reports = voice_reports
+    job.sensor_trace = sensor_samples
     schedule(job)
     return {"job_id": job.id, "status": job.status, "backend": job.backend,
-            "image_count": len(saved_paths)}
+            "image_count": len(saved_paths), "audio_count": len(audio_paths),
+            "sensor_samples": len(sensor_samples)}
+
+
+def _parse_json_list(raw: str, field_name: str) -> list[dict]:
+    if not raw or raw.strip() in ("", "[]"):
+        return []
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=422, detail=f"{field_name} must be valid JSON") from exc
+    if not isinstance(data, list):
+        raise HTTPException(status_code=422, detail=f"{field_name} must be a JSON list")
+    if not all(isinstance(item, dict) for item in data):
+        raise HTTPException(status_code=422, detail=f"{field_name} entries must be objects")
+    return data
 
 
 @app.post("/api/ingest")
@@ -136,13 +170,34 @@ async def ingest(request: IngestRequest) -> dict:
     }
 
 
+@app.post("/api/audio/transcribe", response_model=TranscribeResponse)
+async def audio_transcribe(
+    audio: UploadFile = File(...),
+    fallback_text: str = Form(default=""),
+) -> TranscribeResponse:
+    job_dir = _EVIDENCE_DIR / "transcribe"
+    job_dir.mkdir(exist_ok=True)
+    safe_name = Path(audio.filename or "operator_audio.webm").name
+    dest = job_dir / f"{asyncio.get_event_loop().time():.6f}-{safe_name}"
+    with dest.open("wb") as f:
+        shutil.copyfileobj(audio.file, f)
+    result = transcribe_audio(dest, fallback_text=fallback_text)
+    return TranscribeResponse(text=result.text, confidence=result.confidence, backend=result.backend)
+
+
 @app.get("/api/evidence/{uuid}/{filename}")
 async def serve_evidence(uuid: str, filename: str):
     """Serve an uploaded Gazebo frame by source UUID + filename."""
     target = _EVIDENCE_DIR / uuid / filename
     if not target.exists() or not target.is_file():
         raise HTTPException(status_code=404, detail="evidence file not found")
-    return FileResponse(str(target), media_type="image/jpeg")
+    media_type = (
+        "audio/webm" if target.suffix.lower() in (".webm", ".ogg")
+        else "audio/wav" if target.suffix.lower() == ".wav"
+        else "audio/aac" if target.suffix.lower() == ".aac"
+        else "image/jpeg"
+    )
+    return FileResponse(str(target), media_type=media_type)
 
 
 @app.get("/api/feeds/latest/{source}")

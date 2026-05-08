@@ -41,6 +41,7 @@ secrets.yaml
 
 # Local submission/build artifacts are generated near deadline.
 submission/
+e2e_screenshots/
 
 # ROS2 build artifacts
 ros2/build/

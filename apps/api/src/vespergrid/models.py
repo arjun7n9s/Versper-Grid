@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 Severity = Literal["watch", "elevated", "critical"]
-EvidenceKind = Literal["image", "video", "report", "sensor"]
+EvidenceKind = Literal["image", "video", "report", "sensor", "audio"]
 UncertaintyKind = Literal["missing_data", "model_disagreement", "stale_evidence", "simulation_sensitivity"]
 
 
@@ -18,6 +18,9 @@ class EvidenceItem(BaseModel):
     confidence: float = Field(ge=0, le=1)
     signal: str
     linkedZoneId: str | None = None
+    assetUrl: str | None = None
+    transcript: str | None = None
+    metadata: dict[str, str | int | float | bool | None] = Field(default_factory=dict)
 
 
 class RiskZone(BaseModel):
@@ -79,6 +82,13 @@ class IngestRequest(BaseModel):
     field_notes: str
     media_count: int = Field(default=0, ge=0, le=10)
     sensor_count: int = Field(default=0, ge=0, le=20)
+    sensor_trace: list[dict] = Field(default_factory=list)
+
+
+class TranscribeResponse(BaseModel):
+    text: str
+    confidence: float
+    backend: str
 
 
 class IngestResponse(BaseModel):

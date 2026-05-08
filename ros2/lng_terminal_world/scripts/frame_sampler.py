@@ -21,6 +21,7 @@ Topics consumed (all sensor_msgs/Image, bridged from Ignition):
 from __future__ import annotations
 
 import io
+import json
 import logging
 import os
 import time
@@ -144,6 +145,7 @@ class FrameSampler(Node):
             "location": _LOCATION,
             "field_notes": _FIELD_NOTES,
             "sensor_count": str(len(frames)),
+            "sensor_trace": json.dumps(_synthetic_sensor_trace()),
         }
 
         self._job_count += 1
@@ -196,6 +198,26 @@ class FrameSampler(Node):
             )
         except Exception as exc:
             self.get_logger().warn(f"[job {job_id}] poll failed: {exc}")
+
+def _synthetic_sensor_trace() -> list[dict]:
+    now = time.time()
+    trace = []
+    for i in range(30):
+        age = 29 - i
+        elapsed = max(0.0, (now % 90) - age)
+        if elapsed < 20:
+            ppm = 2.0
+        elif elapsed < 45:
+            ppm = 2.0 + (elapsed - 20) * 1.05
+        else:
+            ppm = 27.0 + 2.5 * __import__("math").sin(elapsed * 0.25)
+        trace.append({
+            "timestamp": now - age,
+            "gas_ppm": round(ppm, 2),
+            "wind_speed_mps": 3.7,
+            "wind_direction_deg": 225.0,
+        })
+    return trace
 
 
 def main(args=None):

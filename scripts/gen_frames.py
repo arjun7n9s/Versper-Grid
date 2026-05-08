@@ -7,7 +7,7 @@ to the ingest API. Simulates:
 
 Run: /opt/vespergrid-venv/bin/python3 /opt/vespergrid/scripts/gen_frames.py
 """
-import httpx, io, math, time, random, sys
+import httpx, io, json, math, time, random, sys
 
 from PIL import Image, ImageDraw, ImageFilter
 
@@ -261,6 +261,7 @@ def run():
                     'location':    'Tank B-4 Flange · Northgate LNG Terminal',
                     'field_notes': f'Frame bundle #{i} — t={t:.0f}s. Gas plume drifting NE. Drone D-1 orbit. Gate CCTV nominal.',
                     'sensor_count':'3',
+                    'sensor_trace': json.dumps(make_sensor_trace(t)),
                 },
                 timeout=30,
             )
@@ -270,6 +271,27 @@ def run():
             print(f'[{time.strftime("%H:%M:%S")}] ERROR: {e}')
         i += 1
         time.sleep(INTERVAL)
+
+def make_sensor_trace(t: float):
+    now = time.time()
+    samples = []
+    for idx in range(30):
+        age = 29 - idx
+        elapsed = max(0.0, t - age)
+        if elapsed < 20:
+            ppm = 2.0 + 0.4 * math.sin(elapsed)
+        elif elapsed < 48:
+            ppm = 2.0 + (elapsed - 20) * 1.05
+        else:
+            ppm = 31.0 + 2.0 * math.sin(elapsed * 0.2)
+        samples.append({
+            'timestamp': now - age,
+            'gas_ppm': round(ppm, 2),
+            'wind_speed_mps': round(3.5 + 0.4 * math.sin(elapsed * 0.1), 2),
+            'wind_direction_deg': round(225 + 8 * math.sin(elapsed * 0.05), 1),
+        })
+    return samples
+
 
 if __name__ == '__main__':
     run()

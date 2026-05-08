@@ -34,6 +34,8 @@ EventStage = Literal[
     "queued",
     "sampling",
     "parsing",
+    "transcribing",
+    "analyzing",
     "normalizing",
     "synthesizing",
     "complete",
@@ -65,6 +67,9 @@ class IngestJob:
     result: Scenario | None = None
     error: str | None = None
     image_paths: list[Path] = field(default_factory=list)
+    audio_paths: list[Path] = field(default_factory=list)
+    voice_reports: list[dict] = field(default_factory=list)
+    sensor_trace: list[dict] = field(default_factory=list)
     backend: Literal["deterministic", "local_vlm", "vllm"] = "deterministic"
     _queue: asyncio.Queue = field(default_factory=asyncio.Queue)
 
@@ -166,20 +171,30 @@ async def _run_pipeline(job: IngestJob) -> None:
         await asyncio.sleep(0)
 
         n_images = len(job.image_paths)
+        n_audio = len(job.audio_paths)
         sensor_count = job.request.sensor_count
         await registry.emit(
             job,
             "sampling",
-            f"Sampling {n_images} image frame(s) and {sensor_count} sensor trace(s).",
+            f"Sampling {n_images} image frame(s), {n_audio} voice clip(s), and {sensor_count} sensor trace point(s).",
             0.15,
         )
+
+        voice_reports = await _transcribe_voice_reports(job)
+        if job.sensor_trace:
+            await registry.emit(
+                job,
+                "analyzing",
+                f"Analyzing {len(job.sensor_trace)} gas/wind telemetry sample(s).",
+                0.66 if job.image_paths else 0.45,
+            )
 
         if job.image_paths:
             scenario = await _run_vlm_pipeline(job)
         else:
             await registry.emit(
                 job, "parsing",
-                "No images attached — running deterministic synthesizer.",
+                "No camera frames attached — running deterministic synthesizer.",
                 0.45,
             )
             await registry.emit(
@@ -193,6 +208,11 @@ async def _run_pipeline(job: IngestJob) -> None:
                 0.90,
             )
             scenario = synthesize_from_ingest(job.request)
+            from .engine import enrich_scenario_with_modalities
+            scenario = enrich_scenario_with_modalities(
+                scenario,
+                voice_reports=voice_reports,
+            )
 
         job.result = scenario
         await registry.emit(
@@ -230,9 +250,11 @@ async def _run_vlm_pipeline(job: IngestJob) -> Scenario:
 
     bundles = []
     uuids = []
+    image_assets: dict[str, str] = {}
     for idx, img_path in enumerate(job.image_paths):
         source_uuid = img_path.stem.upper().replace("-", "_")[:24]
         uuids.append(source_uuid)
+        image_assets[source_uuid] = f"/api/evidence/{job.id}/{img_path.name}"
         try:
             img_bytes = img_path.read_bytes()
             bundle = await parse_fn(
@@ -265,14 +287,61 @@ async def _run_vlm_pipeline(job: IngestJob) -> Scenario:
     if not bundles:
         logger.warning("All VLM calls failed — falling back to deterministic")
         job.backend = "deterministic"
-        return synthesize_from_ingest(job.request)
+        from .engine import enrich_scenario_with_modalities
+        return enrich_scenario_with_modalities(
+            synthesize_from_ingest(job.request),
+            voice_reports=job.voice_reports,
+        )
 
     return synthesize_from_vlm_output(
         bundles=bundles,
         location=job.request.location,
         field_notes=job.request.field_notes,
         image_uuids=uuids,
+        voice_reports=job.voice_reports,
+        sensor_trace=job.sensor_trace,
+        image_assets=image_assets,
     )
+
+
+async def _transcribe_voice_reports(job: IngestJob) -> list[dict]:
+    manifest_reports = list(job.voice_reports)
+    if not job.audio_paths:
+        return manifest_reports
+
+    from .stt import transcribe_audio
+
+    reports: list[dict] = []
+    await registry.emit(
+        job,
+        "transcribing",
+        f"Transcribing {len(job.audio_paths)} voice clip(s).",
+        0.24,
+    )
+    loop = asyncio.get_event_loop()
+    for idx, path in enumerate(job.audio_paths):
+        existing = manifest_reports[idx] if idx < len(manifest_reports) else {}
+        fallback = str(existing.get("text") or existing.get("transcript") or "")
+        result = await loop.run_in_executor(None, transcribe_audio, path, fallback)
+        source_uuid = str(existing.get("source_uuid") or f"SRC-AUD-{idx + 1:04d}")
+        reports.append({
+            "source_uuid": source_uuid,
+            "speaker": existing.get("speaker") or path.stem.replace("_", " ").title(),
+            "role": existing.get("role") or "field reporter",
+            "location": existing.get("location") or "Sector 4",
+            "text": result.text,
+            "confidence": result.confidence,
+            "backend": result.backend,
+            "asset_url": f"/api/evidence/{job.id}/{path.name}",
+        })
+        await registry.emit(
+            job,
+            "transcribing",
+            f"Voice report {idx + 1}/{len(job.audio_paths)} transcribed via {result.backend}.",
+            0.24 + 0.18 * (idx + 1) / len(job.audio_paths),
+        )
+    job.voice_reports = reports
+    return reports
 
 
 def schedule(job: IngestJob) -> asyncio.Task:

@@ -5,7 +5,8 @@ incident trigger is detected (or manually via ROS2 service call), saves
 JPEGs to disk, and POSTs them to the VesperGrid API /api/ingest/upload.
 
 Subscribed topics:
-  /drone_cam/image_raw        sensor_msgs/Image
+  /drone_d1/image_raw         sensor_msgs/Image
+  /cctv_south/image_raw       sensor_msgs/Image
   /cctv_gate/image_raw        sensor_msgs/Image
   /gas_sensor_0/reading       std_msgs/Float32   (ppm concentration)
   /wind/state                 std_msgs/String    (JSON: speed_mps, direction_deg)
@@ -56,6 +57,7 @@ class EvidenceBridge(Node):
 
         self._bridge = CvBridge()
         self._drone_buf: deque = deque(maxlen=10)
+        self._cctv_south_buf: deque = deque(maxlen=10)
         self._cctv_buf: deque = deque(maxlen=10)
         self._gas_readings: deque = deque(maxlen=30)
         self._wind_state: dict = {}
@@ -63,7 +65,8 @@ class EvidenceBridge(Node):
         self._cooldown_s: float = 30.0
         self._ingest_count: int = 0
 
-        self.create_subscription(Image, "/drone_cam/image_raw", self._drone_cb, 5)
+        self.create_subscription(Image, "/drone_d1/image_raw", self._drone_cb, 5)
+        self.create_subscription(Image, "/cctv_south/image_raw", self._cctv_south_cb, 5)
         self.create_subscription(Image, "/cctv_gate/image_raw", self._cctv_cb, 5)
         self.create_subscription(Float32, "/gas_sensor_0/reading", self._gas_cb, 10)
         self.create_subscription(String, "/wind/state", self._wind_cb, 10)
@@ -88,6 +91,13 @@ class EvidenceBridge(Node):
             self._cctv_buf.append((time.time(), cv_img))
         except Exception as e:
             self.get_logger().warn(f"cctv frame decode error: {e}")
+
+    def _cctv_south_cb(self, msg: Image) -> None:
+        try:
+            cv_img = self._bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
+            self._cctv_south_buf.append((time.time(), cv_img))
+        except Exception as e:
+            self.get_logger().warn(f"cctv south frame decode error: {e}")
 
     def _gas_cb(self, msg: Float32) -> None:
         reading = msg.data
@@ -134,6 +144,7 @@ class EvidenceBridge(Node):
                     saved.append(fname)
 
         encode_frames(self._drone_buf, "drone_cam")
+        encode_frames(self._cctv_south_buf, "cctv_south")
         encode_frames(self._cctv_buf, "cctv_gate")
 
         if not files:
@@ -158,6 +169,7 @@ class EvidenceBridge(Node):
             "location": self._location,
             "field_notes": full_notes,
             "sensor_count": str(len(self._gas_readings)),
+            "sensor_trace": json.dumps(self._sensor_trace_payload()),
         }
 
         url = f"{self._api_url}/api/ingest/upload"
@@ -173,6 +185,19 @@ class EvidenceBridge(Node):
         except Exception as exc:
             self.get_logger().error(f"Ingest POST failed: {exc}")
             return False
+
+    def _sensor_trace_payload(self) -> list[dict]:
+        payload = []
+        wind_speed = self._wind_state.get("speed_mps") if self._wind_state else None
+        wind_dir = self._wind_state.get("direction_deg") if self._wind_state else None
+        for ts, ppm in list(self._gas_readings)[-30:]:
+            payload.append({
+                "timestamp": ts,
+                "gas_ppm": float(ppm),
+                "wind_speed_mps": wind_speed,
+                "wind_direction_deg": wind_dir,
+            })
+        return payload
 
 
 def main(args=None):

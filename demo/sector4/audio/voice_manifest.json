@@ -1,0 +1,18 @@
+[
+  {
+    "source_uuid": "SRC-AUD-S2347",
+    "file": "2347-Sector4.aac",
+    "speaker": "S2347",
+    "role": "sector supervisor",
+    "location": "Sector 4",
+    "transcript": "Supervisor S2347 from Sector 4 reports smoke coming from the tanker area and spreading across the sector."
+  },
+  {
+    "source_uuid": "SRC-AUD-S2451",
+    "file": "2451-sector5.aac",
+    "speaker": "S2451",
+    "role": "nearby sector supervisor",
+    "location": "Sector 5",
+    "transcript": "Supervisor S2451 from Sector 5 reports a strange smell over the last ten minutes."
+  }
+]

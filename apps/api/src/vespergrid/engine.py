@@ -15,12 +15,14 @@ from pathlib import Path
 
 from .models import (
     EvidenceItem,
+    GpuLane,
     IngestRequest,
     ResponseAction,
     RiskZone,
     Scenario,
     UncertaintyIssue,
 )
+from .sensor_analysis import SensorAnalysis, analyze_sensor_trace
 
 # engine.py -> vespergrid -> src -> api -> apps -> console/src/data/sector4.json
 _SCENARIO_PATH = (
@@ -93,7 +95,161 @@ def synthesize_from_ingest(request: IngestRequest) -> Scenario:
         base.brief.append(
             "Live operator note was added as a source-linked graph observation."
         )
+    sensor = analyze_sensor_trace(request.sensor_trace)
+    if sensor:
+        _merge_sensor_analysis(base, sensor)
     return base
+
+
+def _merge_voice_reports(
+    scenario: Scenario,
+    reports: list[dict],
+) -> None:
+    relevant_sources: list[str] = []
+    for idx, report in enumerate(reports):
+        text = str(report.get("text") or report.get("transcript") or "").strip()
+        if not text:
+            continue
+        source_uuid = str(report.get("source_uuid") or f"SRC-AUD-{idx + 1:04d}")
+        speaker = str(report.get("speaker") or f"Voice report {idx + 1}")
+        role = str(report.get("role") or "field reporter")
+        location = str(report.get("location") or "Sector 4")
+        confidence = float(report.get("confidence") or 0.61)
+        asset_url = report.get("asset_url")
+        lower = f"{location} {text}".lower()
+        mentions_sector4 = "sector 4" in lower
+        mentions_sector5 = "sector 5" in lower
+        mentions_smoke = "smoke" in lower or "plume" in lower
+        mentions_smell = "smell" in lower or "gas" in lower or "odor" in lower
+        if mentions_sector4 or mentions_sector5 or mentions_smoke or mentions_smell:
+            relevant_sources.append(source_uuid)
+        signal = (
+            "visual smoke corroboration" if mentions_smoke and mentions_sector4
+            else "downwind odor report" if mentions_smell and mentions_sector5
+            else "spoken field report"
+        )
+        linked_zone = "z1" if mentions_sector4 else "z-live-sensor" if mentions_sector5 else "z1"
+        scenario.evidence.append(
+            EvidenceItem(
+                id=f"ev-audio-{idx + 1}",
+                sourceUuid=source_uuid,
+                source=f"{speaker} voice report",
+                kind="audio",
+                summary=text[:220],
+                confidence=max(0.0, min(1.0, confidence)),
+                signal=signal,
+                linkedZoneId=linked_zone,
+                assetUrl=str(asset_url) if asset_url else None,
+                transcript=text,
+                metadata={
+                    "speaker": speaker,
+                    "role": role,
+                    "location": location,
+                    "stt_backend": report.get("backend"),
+                    "relevance": "corroborates leak context" if source_uuid in relevant_sources else "context only",
+                },
+            )
+        )
+        if mentions_smoke and mentions_sector4:
+            scenario.brief.append(f"{speaker} visually confirms smoke spread inside Sector 4.")
+        if mentions_smell and mentions_sector5:
+            scenario.brief.append(f"{speaker} reports odor drift reaching Sector 5, supporting cross-sector spread risk.")
+    if reports:
+        scenario.brief.append(
+            f"{len(reports)} voice report(s) were transcribed and linked into the evidence graph."
+        )
+        scenario.uncertainties.append(
+            UncertaintyIssue(
+                id="u-voice-confirmation",
+                kind="missing_data",
+                title="Voice reports require field confirmation",
+                detail="Spoken reports are useful human context but should be reconciled with camera and gas telemetry before dispatch.",
+                severity="watch",
+                sourceEntityIds=[str(r.get("source_uuid") or f"SRC-AUD-{i + 1:04d}") for i, r in enumerate(reports)],
+            )
+        )
+        if relevant_sources:
+            scenario.actions.insert(
+                0,
+                ResponseAction(
+                    id="act-voice-corroboration",
+                    title="Use voice corroboration to prioritize downwind isolation and tanker-area verification.",
+                    owner="Incident commander",
+                    etaMinutes=3,
+                    impact=81,
+                    confidence=0.74,
+                    caveat="Voice evidence is corroborative and should remain linked to camera and sensor findings.",
+                    sourceEntityId=relevant_sources[0],
+                ),
+            )
+
+
+def _merge_sensor_analysis(scenario: Scenario, sensor: SensorAnalysis) -> None:
+    severity = "critical" if sensor.toxicity_band == "critical" else "elevated" if sensor.toxicity_band == "elevated" else "watch"
+    scenario.evidence.append(
+        EvidenceItem(
+            id="ev-live-gas-trace",
+            sourceUuid=sensor.source_uuid,
+            source="Gas and wind sensor trace",
+            kind="sensor",
+            summary=sensor.summary,
+            confidence=sensor.confidence,
+            signal=f"{sensor.toxicity_band} toxicity band",
+            linkedZoneId="z2",
+            metadata={
+                "latest_ppm": sensor.latest_ppm,
+                "peak_ppm": sensor.peak_ppm,
+                "rise_rate_ppm_per_min": sensor.rise_rate_ppm_per_min,
+                "threshold_crossings": sensor.threshold_crossings,
+                "toxicity_band": sensor.toxicity_band,
+                "wind_speed_mps": sensor.wind_speed_mps,
+                "wind_direction_deg": sensor.wind_direction_deg,
+            },
+        )
+    )
+    existing = {zone.id for zone in scenario.zones}
+    if "z-live-sensor" not in existing:
+        scenario.zones.append(
+            RiskZone(
+                id="z-live-sensor",
+                label="Sensor Drift Corridor",
+                x=64,
+                y=38,
+                radius=15 if severity != "critical" else 19,
+                severity=severity,
+                rationale=sensor.summary,
+            )
+        )
+    scenario.actions.insert(
+        0,
+        ResponseAction(
+            id="act-live-sensor",
+            title=sensor.recommendation,
+            owner="Incident commander",
+            etaMinutes=2 if severity == "critical" else 5,
+            impact=92 if severity == "critical" else 76,
+            confidence=sensor.confidence,
+            caveat="Sensor recommendation is deterministic and should be reconciled with live visual evidence.",
+            sourceEntityId=sensor.source_uuid,
+        ),
+    )
+    scenario.brief.append(sensor.summary)
+    scenario.confidence = min(0.96, max(scenario.confidence, sensor.confidence))
+
+
+def enrich_scenario_with_modalities(
+    scenario: Scenario,
+    *,
+    voice_reports: list[dict] | None = None,
+    sensor_trace: list[dict] | None = None,
+) -> Scenario:
+    if sensor_trace:
+        sensor = analyze_sensor_trace(sensor_trace)
+        if sensor:
+            _merge_sensor_analysis(scenario, sensor)
+    if voice_reports:
+        _merge_voice_reports(scenario, voice_reports)
+    return scenario
 
 
 def synthesize_from_vlm_output(
@@ -101,6 +257,9 @@ def synthesize_from_vlm_output(
     location: str,
     field_notes: str,
     image_uuids: list[str],
+    voice_reports: list[dict] | None = None,
+    sensor_trace: list[dict] | None = None,
+    image_assets: dict[str, str] | None = None,
 ) -> Scenario:
     """Build a real Scenario from one or more VLMObservationsBundle objects.
 
@@ -127,6 +286,7 @@ def synthesize_from_vlm_output(
 
     for idx, bundle in enumerate(bundles):
         uuid = bundle.source_uuid
+        asset_url = (image_assets or {}).get(uuid)
         obs_list = bundle.observations
         unc_list = bundle.uncertainties
 
@@ -144,6 +304,7 @@ def synthesize_from_vlm_output(
                 confidence=obs.confidence,
                 signal=obs.type.lower(),
                 linkedZoneId=f"z{(idx % 4) + 1}",
+                assetUrl=asset_url,
             ))
             all_confidences.append(obs.confidence)
 
@@ -224,11 +385,9 @@ def synthesize_from_vlm_output(
             f"{len(uncertainties)} uncertainty issue(s) require operator verification."
         )
 
-    from .models import GpuLane
-    import subprocess, shutil
     gpu_lanes = _get_gpu_lanes()
 
-    return Scenario(
+    scenario = Scenario(
         incident="VLM-Analysed Incident",
         category="Multimodal AI Assessment",
         location=location,
@@ -245,6 +404,11 @@ def synthesize_from_vlm_output(
         uncertainties=uncertainties,
         gpu=gpu_lanes,
         brief=brief_lines,
+    )
+    return enrich_scenario_with_modalities(
+        scenario,
+        voice_reports=voice_reports,
+        sensor_trace=sensor_trace,
     )
 
 

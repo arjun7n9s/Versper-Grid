@@ -11,11 +11,14 @@ export interface EvidenceItem {
   id: string;
   sourceUuid: string;
   source: string;
-  kind: "image" | "video" | "report" | "sensor";
+  kind: "image" | "video" | "report" | "sensor" | "audio";
   summary: string;
   confidence: number;
   signal: string;
   linkedZoneId?: string;
+  assetUrl?: string;
+  transcript?: string;
+  metadata?: Record<string, string | number | boolean | null>;
 }
 
 export interface RiskZone {

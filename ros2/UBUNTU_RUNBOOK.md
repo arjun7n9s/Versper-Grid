@@ -11,8 +11,9 @@ gazebo --version          # Classic 11 → "Gazebo multi-robot simulator, versio
 ign gazebo --version      # Harmonic/Fortress → "Ignition Gazebo, version X"
 ```
 
-If you have **Gazebo Classic 11** (ships with Humble by default) — the world file works as-is.
-If you have **Harmonic (New Gazebo / gz sim)** — tell me and I'll convert the `.world` to `.sdf` with gz plugins.
+The canonical simulation now uses `ros2/lng_terminal_world/worlds/lng_terminal.sdf`
+with Ignition/Gazebo Fortress-style bridges. The older `lng_terminal.world` is kept
+only as a reference fallback.
 
 ---
 
@@ -96,9 +97,10 @@ ros2 launch lng_terminal_world lng_terminal.launch.py
 Confirm camera topics are publishing:
 ```bash
 ros2 topic list | grep image_raw
-# /drone_cam/image_raw
+# /cctv_south/image_raw
+# /drone_d1/image_raw
 # /cctv_gate/image_raw
-ros2 topic hz /drone_cam/image_raw   # should show ~5 Hz
+ros2 topic hz /drone_d1/image_raw   # should show ~5 Hz
 ```
 
 ---
@@ -112,7 +114,8 @@ ros2 run evidence_bridge gas_leak_publisher
 
 # In another terminal, record all topics for 90 seconds:
 ros2 bag record -o lng_incident_bag \
-    /drone_cam/image_raw \
+    /cctv_south/image_raw \
+    /drone_d1/image_raw \
     /cctv_gate/image_raw \
     /gas_sensor_0/reading \
     /wind/state
@@ -164,8 +167,9 @@ npm --prefix /path/to/AMD-S-2/apps/console run dev
 Open `http://localhost:5173` — when the bridge triggers, the console will show:
 1. SSE progress bar advancing: queued → sampling → parsing → normalizing → synthesizing → complete
 2. Real evidence items from Qwen-VL's observations
-3. Uncertainty issues from cross-sensor contradictions
-4. Source lineage: clicking an evidence row shows the actual Gazebo frame
+3. Deterministic gas/wind trend analysis from structured sensor traces
+4. Voice reports as transcribed source-linked evidence when audio is uploaded
+5. Source lineage: clicking an evidence row shows the actual Gazebo frame, transcript, or sensor trace summary
 
 ---
 

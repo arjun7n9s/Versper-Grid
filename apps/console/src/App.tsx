@@ -1,15 +1,19 @@
 import {
   Activity,
   AlertTriangle,
+  BarChart3,
   BrainCircuit,
   CheckCircle2,
   Clock3,
   Cpu,
+  FileAudio,
   FileText,
   GitBranch,
   Layers3,
   Link2,
+  Mic,
   Radar,
+  Radio,
   Route,
   ShieldCheck,
   Sparkles,
@@ -29,6 +33,47 @@ import {
 
 declare const __API_BASE__: string;
 const API_BASE = typeof __API_BASE__ !== "undefined" ? __API_BASE__ : "";
+
+const demoVoiceReports = [
+  {
+    source_uuid: "SRC-AUD-S2347",
+    speaker: "S2347",
+    role: "sector supervisor",
+    location: "Sector 4",
+    transcript: "Supervisor S2347 from Sector 4 reports smoke coming from the tanker area and spreading across the sector.",
+    file: "/audio/2347-Sector4.aac"
+  },
+  {
+    source_uuid: "SRC-AUD-S2451",
+    speaker: "S2451",
+    role: "nearby sector supervisor",
+    location: "Sector 5",
+    transcript: "Supervisor S2451 from Sector 5 reports a strange smell over the last ten minutes.",
+    file: "/audio/2451-sector5.aac"
+  }
+];
+
+type VoiceReport = (typeof demoVoiceReports)[number];
+type VoicePlaybackState = {
+  source_uuid: string;
+  speaker: string;
+  location: string;
+  status: "idle" | "queued" | "speaking" | "complete";
+};
+
+function demoSensorTrace() {
+  const now = Date.now() / 1000;
+  return Array.from({ length: 30 }, (_, index) => {
+    const t = index * 3;
+    const gas = t < 18 ? 2.4 + Math.sin(t) * 0.3 : t < 60 ? 2.4 + (t - 18) * 0.72 : 32;
+    return {
+      timestamp: now - (29 - index) * 3,
+      gas_ppm: Math.round(gas * 10) / 10,
+      wind_speed_mps: 3.7,
+      wind_direction_deg: 225
+    };
+  });
+}
 
 const severityLabels: Record<Severity, string> = {
   watch: "Watch",
@@ -98,19 +143,74 @@ async function startIngestJob(note: string): Promise<{ job_id: string; backend: 
 
 async function startIngestUpload(
   note: string,
-  files: File[]
+  files: File[],
+  audioFiles: File[] = [],
+  voiceManifest: typeof demoVoiceReports = [],
+  sensorTrace: Array<Record<string, number>> = []
 ): Promise<{ job_id: string; backend: string }> {
   const form = new FormData();
   form.append("location", "Sector 4 — Tank B-4 Flange, Northgate LNG Terminal");
   form.append("field_notes", note);
-  form.append("sensor_count", "2");
+  form.append("sensor_count", String(sensorTrace.length || 2));
+  form.append("sensor_trace", JSON.stringify(sensorTrace));
+  form.append("voice_manifest", JSON.stringify(voiceManifest));
   for (const f of files) form.append("images", f);
+  for (const f of audioFiles) form.append("audio", f);
   const response = await fetch(`${API_BASE}/api/ingest/upload`, {
     method: "POST",
     body: form
   });
   if (!response.ok) throw new Error("ingest upload unavailable");
   return response.json();
+}
+
+async function transcribeOperatorAudio(file: File, fallbackText: string) {
+  const form = new FormData();
+  form.append("audio", file);
+  form.append("fallback_text", fallbackText);
+  const response = await fetch(`${API_BASE}/api/audio/transcribe`, {
+    method: "POST",
+    body: form
+  });
+  if (!response.ok) throw new Error("audio transcription unavailable");
+  return response.json() as Promise<{ text: string; confidence: number; backend: string }>;
+}
+
+async function playVoiceSequence(
+  reports: VoiceReport[],
+  onState: (states: VoicePlaybackState[]) => void
+) {
+  const states: VoicePlaybackState[] = reports.map((report, index) => ({
+    source_uuid: report.source_uuid,
+    speaker: report.speaker,
+    location: report.location,
+    status: index === 0 ? "queued" : "idle",
+  }));
+  onState(states);
+
+  for (let i = 0; i < reports.length; i += 1) {
+    states.forEach((state, idx) => {
+      state.status = idx < i ? "complete" : idx === i ? "speaking" : idx === i + 1 ? "queued" : "idle";
+    });
+    onState([...states]);
+    try {
+      await new Promise<void>((resolve) => {
+        const audio = new Audio(reports[i].file);
+        const finish = () => resolve();
+        audio.addEventListener("ended", finish, { once: true });
+        audio.addEventListener("error", finish, { once: true });
+        void audio.play().catch(() => resolve());
+        window.setTimeout(resolve, 12_000);
+      });
+    } catch {
+      /* keep pipeline moving */
+    }
+  }
+
+  states.forEach((state) => {
+    state.status = "complete";
+  });
+  onState([...states]);
 }
 
 function ingestStream(
@@ -120,7 +220,7 @@ function ingestStream(
 ): Promise<Scenario> {
   return new Promise((resolve, reject) => {
     const source = new EventSource(`${API_BASE}/api/ingest/${jobId}/events`);
-    const stages = ["queued", "sampling", "parsing", "normalizing", "synthesizing", "complete", "error"];
+    const stages = ["queued", "sampling", "parsing", "transcribing", "analyzing", "normalizing", "synthesizing", "complete", "error"];
     for (const stage of stages) {
       source.addEventListener(stage, (event) => {
         try {
@@ -170,6 +270,7 @@ function SourcePreview({
     u.sourceEntityIds.includes(selectedSource)
   );
   const asset = sourceAssets[selectedSource];
+  const mediaUrl = evidence?.assetUrl ? `${API_BASE}${evidence.assetUrl}` : asset?.src;
   if (!evidence && !action && !issue) return null;
 
   return (
@@ -179,8 +280,14 @@ function SourcePreview({
         <span>Source Lineage</span>
       </div>
       <div className="source-preview-body">
-        {asset?.src ? (
-          <img className="source-thumb" src={asset.src} alt={asset.alt} />
+        {evidence?.kind === "audio" && mediaUrl ? (
+          <div className="source-thumb source-thumb-text">
+            <Radio size={28} />
+            <span>{evidence.source}</span>
+            <audio controls src={mediaUrl} />
+          </div>
+        ) : mediaUrl ? (
+          <img className="source-thumb" src={mediaUrl} alt={asset?.alt ?? evidence?.source ?? "Evidence asset"} />
         ) : (
           <div className="source-thumb source-thumb-text">
             <span>{asset?.tag ?? selectedSource}</span>
@@ -193,6 +300,7 @@ function SourcePreview({
             <>
               <h4>{evidence.source}</h4>
               <p>{evidence.summary}</p>
+              {evidence.transcript && <p className="transcript-line">"{evidence.transcript}"</p>}
               <div className="source-stats">
                 <span>signal: {evidence.signal}</span>
                 <span>confidence: {pct(evidence.confidence)}</span>
@@ -221,6 +329,7 @@ function EvidenceIcon({ item }: { item: EvidenceItem }) {
   if (item.kind === "image") return <Layers3 size={16} />;
   if (item.kind === "video") return <Activity size={16} />;
   if (item.kind === "sensor") return <Radar size={16} />;
+  if (item.kind === "audio") return <FileAudio size={16} />;
   return <FileText size={16} />;
 }
 
@@ -277,7 +386,7 @@ function EvidenceRail({
     <section className="panel evidence-panel">
       <div className="panel-title">
         <UploadCloud size={18} />
-        <span>Evidence Mesh</span>
+        <span>Evidence Timeline</span>
       </div>
       <div className="evidence-list">
         {evidence.map((item) => (
@@ -317,7 +426,7 @@ function ActionStack({
     <section className="panel action-panel">
       <div className="panel-title">
         <Route size={18} />
-        <span>Decision Support Synthesizer</span>
+        <span>Response Options</span>
       </div>
       {scenario.actions.map((action, index) => (
         <article className={`action-card ${selectedSource === action.sourceEntityId ? "selected" : ""}`} key={action.id}>
@@ -431,7 +540,7 @@ function BriefPanel({
     <section className="panel brief-panel">
       <div className="panel-title">
         <BrainCircuit size={18} />
-        <span>Judge Brief</span>
+        <span>Incident State</span>
       </div>
       <div className="brief-lines">
         {scenario.brief.map((line) => (
@@ -567,7 +676,7 @@ function LiveJobTicker({
     watchedRef.current.add(jobId);
 
     const source = new EventSource(`${API_BASE}/api/ingest/${jobId}/events`);
-    const stages = ["queued", "sampling", "parsing", "normalizing", "synthesizing", "complete", "error"];
+    const stages = ["queued", "sampling", "parsing", "transcribing", "analyzing", "normalizing", "synthesizing", "complete", "error"];
     for (const stage of stages) {
       source.addEventListener(stage, (event) => {
         try {
@@ -743,12 +852,140 @@ function LiveIngestPanel({
   );
 }
 
+function SensorTrendPanel({ scenario }: { scenario: Scenario }) {
+  const sensorEvidence = [...scenario.evidence].reverse().find((item) => item.kind === "sensor");
+  const trace = demoSensorTrace();
+  const max = Math.max(...trace.map((p) => p.gas_ppm), 30);
+  const points = trace
+    .map((p, i) => `${(i / (trace.length - 1)) * 100},${58 - (p.gas_ppm / max) * 54}`)
+    .join(" ");
+  const peak = sensorEvidence?.metadata?.peak_ppm ?? Math.max(...trace.map((p) => p.gas_ppm));
+  const band = sensorEvidence?.metadata?.toxicity_band ?? "demo trace";
+
+  return (
+    <section className="panel sensor-panel">
+      <div className="panel-title">
+        <BarChart3 size={18} />
+        <span>Gas Trend</span>
+      </div>
+      <div className="sensor-chart">
+        <svg viewBox="0 0 100 62" preserveAspectRatio="none">
+          <line x1="0" y1="30" x2="100" y2="30" />
+          <polyline points={points} />
+        </svg>
+      </div>
+      <div className="sensor-stats">
+        <div><small>Peak ppm</small><strong>{String(peak)}</strong></div>
+        <div><small>Band</small><strong>{String(band)}</strong></div>
+      </div>
+      <p>{sensorEvidence?.summary ?? "Awaiting structured gas and wind telemetry from ROS2."}</p>
+    </section>
+  );
+}
+
+function VoiceChannelPanel({
+  onVoiceIncident,
+  onRunVoiceTest,
+  playbackStates,
+  processing
+}: {
+  onVoiceIncident: (operatorText: string, operatorAudio: File | null) => Promise<void>;
+  onRunVoiceTest: () => Promise<void>;
+  playbackStates: VoicePlaybackState[];
+  processing: boolean;
+}) {
+  const [recording, setRecording] = useState(false);
+  const [operatorText, setOperatorText] = useState(
+    "Attention everybody, VesperGrid is showing contamination risk in the workspace. Supervisors around Sector 4, give me current status."
+  );
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const chunks = useRef<Blob[]>([]);
+
+  const startRecording = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const recorder = new MediaRecorder(stream);
+    chunks.current = [];
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) chunks.current.push(event.data);
+    };
+    recorder.onstop = async () => {
+      stream.getTracks().forEach((track) => track.stop());
+      const blob = new Blob(chunks.current, { type: "audio/webm" });
+      const file = new File([blob], "operator_command.webm", { type: "audio/webm" });
+      try {
+        const transcript = await transcribeOperatorAudio(file, operatorText);
+        setOperatorText(transcript.text || operatorText);
+        await onVoiceIncident(transcript.text || operatorText, file);
+      } catch {
+        await onVoiceIncident(operatorText, file);
+      }
+    };
+    recorder.start();
+    setMediaRecorder(recorder);
+    setRecording(true);
+  };
+
+  const stopRecording = () => {
+    mediaRecorder?.stop();
+    setRecording(false);
+    setMediaRecorder(null);
+  };
+
+  const dispatchTextOnly = async () => {
+    await onVoiceIncident(operatorText, null);
+  };
+
+  return (
+    <section className="panel voice-panel">
+      <div className="panel-title">
+        <Mic size={18} />
+        <span>Voice Channel</span>
+      </div>
+      <textarea value={operatorText} onChange={(event) => setOperatorText(event.target.value)} />
+      <div className="voice-controls">
+        <button disabled={processing} onClick={recording ? stopRecording : startRecording}>
+          <Mic size={14} />
+          {recording ? "Stop and dispatch" : "Open mic"}
+        </button>
+        <button disabled={processing || recording} onClick={dispatchTextOnly}>
+          <Radio size={14} />
+          Dispatch scripted reports
+        </button>
+        <button disabled={processing || recording} onClick={onRunVoiceTest}>
+          <FileAudio size={14} />
+          Run STT test
+        </button>
+      </div>
+      <div className="voice-report-list">
+        {demoVoiceReports.map((report) => (
+          <article key={report.source_uuid} className={`voice-report-card ${playbackStates.find((item) => item.source_uuid === report.source_uuid)?.status ?? "idle"}`}>
+            <div className="row-heading">
+              <span>{report.speaker}</span>
+              <b>{playbackStates.find((item) => item.source_uuid === report.source_uuid)?.status === "speaking" ? `${report.speaker} speaking` : report.location}</b>
+            </div>
+            <audio controls src={report.file} />
+            <p>{report.transcript}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function App() {
   const [scenario, setScenario] = useState<Scenario>(fallbackScenario);
   const [backend, setBackend] = useState<"online" | "offline" | "checking">("checking");
   const [selectedSource, setSelectedSource] = useState<string | null>("SRC-VID-2217");
   const [processing, setProcessing] = useState(false);
   const [ingestProgress, setIngestProgress] = useState<IngestProgress | null>(null);
+  const [voicePlaybackStates, setVoicePlaybackStates] = useState<VoicePlaybackState[]>(
+    demoVoiceReports.map((report) => ({
+      source_uuid: report.source_uuid,
+      speaker: report.speaker,
+      location: report.location,
+      status: "idle",
+    }))
+  );
   const watchJobRef = useRef<((jobId: string, backend: string) => void) | null>(null);
 
   useEffect(() => {
@@ -806,6 +1043,59 @@ export function App() {
     }
   };
 
+  const handleVoiceIncident = async (operatorText: string, operatorAudio: File | null) => {
+    setProcessing(true);
+    setIngestProgress(null);
+    try {
+      const voiceFiles: File[] = [];
+      if (operatorAudio) voiceFiles.push(operatorAudio);
+      const manifest = [...demoVoiceReports];
+      for (const report of demoVoiceReports) {
+        const response = await fetch(report.file);
+        const blob = await response.blob();
+        voiceFiles.push(new File([blob], report.file.split("/").pop() ?? "voice.aac", { type: blob.type || "audio/aac" }));
+      }
+      void playVoiceSequence(demoVoiceReports, setVoicePlaybackStates);
+      const note = `${operatorText}\n\nDispatch requested two Sector 4 voice status reports.`;
+      const { job_id, backend: jobBackend } = await startIngestUpload(
+        note,
+        [],
+        voiceFiles,
+        operatorAudio
+          ? [
+              {
+                source_uuid: "SRC-AUD-OPERATOR",
+                speaker: "Operator",
+                role: "incident commander",
+                location: "VesperGrid console",
+                transcript: operatorText,
+                file: "operator_command.webm"
+              },
+              ...manifest
+            ]
+          : manifest,
+        demoSensorTrace()
+      );
+      watchJobRef.current?.(job_id, jobBackend);
+      await _runIngestStream(job_id, jobBackend);
+    } catch {
+      setBackend("offline");
+    } finally {
+      setProcessing(false);
+      window.setTimeout(() => {
+        setVoicePlaybackStates((prev) => prev.map((state) => ({ ...state, status: "idle" })));
+      }, 4000);
+      window.setTimeout(() => setIngestProgress(null), 1400);
+    }
+  };
+
+  const handleVoiceTest = async () => {
+    await handleVoiceIncident(
+      "Attention Sector 4 and nearby sectors. VesperGrid is requesting immediate status on smoke, odor, and spill spread.",
+      null
+    );
+  };
+
   return (
     <main className="shell">
       <header className="topbar">
@@ -854,7 +1144,6 @@ export function App() {
         </div>
       </section>
 
-      {/* ── Gazebo feed strip + pipeline ticker above main workspace ── */}
       <section className="feed-strip">
         <GazeboFeedPanel />
         <LiveJobTicker
@@ -865,6 +1154,12 @@ export function App() {
 
       <section className="workspace">
         <div className="left-column">
+          <VoiceChannelPanel
+            onVoiceIncident={handleVoiceIncident}
+            onRunVoiceTest={handleVoiceTest}
+            playbackStates={voicePlaybackStates}
+            processing={processing}
+          />
           <EvidenceRail evidence={scenario.evidence} selectedSource={selectedSource} onSelect={setSelectedSource} />
           <SourcePreview scenario={scenario} selectedSource={selectedSource} />
           <LiveIngestPanel
@@ -897,6 +1192,7 @@ export function App() {
             <span>Candidate plan</span>
           </div>
         </section>
+        <SensorTrendPanel scenario={scenario} />
         <section className="panel clock-panel">
           <div className="panel-title">
             <Clock3 size={18} />
