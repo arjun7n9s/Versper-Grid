@@ -28,4 +28,8 @@ install(DIRECTORY worlds launch materials
   DESTINATION share/${PROJECT_NAME}
 )
 
+install(PROGRAMS scripts/frame_sampler.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 ament_package()

@@ -103,6 +103,29 @@ def generate_launch_description():
     # loaded directly by Gazebo (see worlds/lng_terminal.sdf). Runs at 1 kHz
     # inside the sim loop — zero subprocess/network overhead.
 
+    # ── Frame sampler: subscribes to all 3 camera topics, bundles keyframes,
+    # POSTs them to the VesperGrid cloud API (Qwen-VL on MI300X) every N secs.
+    frame_sampler = Node(
+        package="lng_terminal_world",
+        executable="frame_sampler.py",
+        name="frame_sampler",
+        output="screen",
+        parameters=[],
+        additional_env={
+            "VESPER_API_URL":        "http://165.245.143.11/api",
+            "SAMPLE_INTERVAL_S":     "10",
+            "MAX_FRAMES_PER_BUNDLE": "5",
+            "JPEG_QUALITY":          "75",
+            "INCIDENT_LOCATION":     "Sector 4 — Tank B-4 Flange, Northgate LNG Terminal",
+            "FIELD_NOTES": (
+                "Active LNG flange failure at Tank B-4, south cluster. "
+                "Visible gas plume, worker evacuation in progress. "
+                "Drone D-1 orbiting incident zone at ~30m altitude. "
+                "CCTV South confirming visible plume spread toward east berm."
+            ),
+        },
+    )
+
     return LaunchDescription([
         set_render_engine,
         set_render_engine_gui,
@@ -113,4 +136,5 @@ def generate_launch_description():
         bridge_cctv_gate,
         bridge_cctv_south,
         bridge_drone,
+        frame_sampler,
     ])
