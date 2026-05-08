@@ -1,0 +1,10 @@
+[SRC-TXT-7781]
+[00:18:06] Yard Ops: Sector 4 team reports solvent smell near polymer stack.
+            Visual confirmation unclear.
+[00:18:21] Safety Lead: Hydrant pressure on west line is unstable.
+            Request tanker relay confirmation.
+[00:18:39] Gate Control: Gate 4 route may be clear, but camera feed has not
+            been checked.
+[00:18:52] Yard Ops: Hold dispatch until route status is verified.
+[00:19:08] Safety Lead: Wind has shifted NE, vapor drift now toward fuel-
+            adjacent lane. Recommend extended perimeter.

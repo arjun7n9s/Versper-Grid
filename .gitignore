@@ -1,0 +1,48 @@
+node_modules/
+dist/
+apps/console/dist/
+*.tsbuildinfo
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+.DS_Store
+Research/
+PROGRESS.md
+
+# Private project context — never push these
+Context/
+.windsurf/
+.codex/
+.claude/
+
+# Internal strategic / agent working notes — keep private
+expert_answers.md
+expert_review.md
+docs/codex_push_working_notes.md
+docs/github_push_plan.md
+docs/expert_response_synthesis.md
+
+# Local PDF/extraction artifacts (not part of the project)
+.amd_pdf_pages/
+amd_pdf_text.txt
+AMD.pdf
+
+# Credentials / keys — defensive
+*.pem
+*.key
+id_rsa*
+*credentials*.json
+secrets.json
+secrets.yaml
+
+# Local submission/build artifacts are generated near deadline.
+submission/
+
+# ROS2 build artifacts
+ros2/build/
+ros2/install/
+ros2/log/

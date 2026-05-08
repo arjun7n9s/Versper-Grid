@@ -1,0 +1,41 @@
+{
+  "scenario_id": "sector4-solvent-containment",
+  "decision_id": "a1",
+  "candidate_action": "Route containment team through Junction E instead of Gate 4",
+  "trace": [
+    {
+      "step": "ingest",
+      "source_uuid": "SRC-VID-2217",
+      "asset": "cctv_gate4_src_vid_2217.png"
+    },
+    {
+      "step": "vlm_call",
+      "model": "Qwen/Qwen2.5-VL-7B-Instruct",
+      "prompt": "VesperGrid evidence parser system prompt v1",
+      "frames_submitted": 1,
+      "tokens_in": 1284,
+      "tokens_out": 312,
+      "latency_ms": 6420,
+      "served_via": "vLLM ROCm TP=1 on a single MI300X"
+    },
+    {
+      "step": "schema_validate",
+      "schema": "VLMObservationsBundle",
+      "ok": true
+    },
+    {
+      "step": "graph_normalize",
+      "entities": [
+        "service_lane_gate_4",
+        "vehicle_queue"
+      ]
+    },
+    {
+      "step": "synthesis",
+      "model": "qwen-reasoning-7b",
+      "prompt_template": "candidate_plan_v2",
+      "human_review_required": true
+    }
+  ],
+  "caveat": "Candidate plan only: verify obstruction at Gate 4 before dispatch."
+}

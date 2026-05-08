@@ -1,0 +1,15 @@
+{
+  "name": "vespergrid",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Source-linked critical infrastructure operational twin for AMD MI300X multimodal inference.",
+  "scripts": {
+    "dev": "npm --prefix apps/console run dev",
+    "build": "npm --prefix apps/console run build",
+    "preview": "npm --prefix apps/console run preview",
+    "api": "uvicorn vespergrid.main:app --app-dir apps/api/src --host 0.0.0.0 --port 8742"
+  },
+  "workspaces": [
+    "apps/console"
+  ]
+}

@@ -1,0 +1,162 @@
+<?xml version="1.0" ?>
+<sdf version="1.9">
+  <world name="lng_terminal">
+
+    <physics type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <plugin
+      filename="gz-sim-physics-system"
+      name="gz::sim::systems::Physics">
+    </plugin>
+    <plugin
+      filename="gz-sim-scene-broadcaster-system"
+      name="gz::sim::systems::SceneBroadcaster">
+    </plugin>
+    <plugin
+      filename="gz-sim-user-commands-system"
+      name="gz::sim::systems::UserCommands">
+    </plugin>
+    <plugin
+      filename="gz-sim-sensors-system"
+      name="gz::sim::systems::Sensors">
+    </plugin>
+
+    <scene>
+      <ambient>0.4 0.4 0.4 1.0</ambient>
+      <background>0.7 0.7 0.7 1.0</background>
+      <shadows>true</shadows>
+    </scene>
+
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <!-- Compound perimeter wall (simplified) -->
+    <model name="perimeter_north">
+      <static>true</static>
+      <pose>0 30 1 0 0 0</pose>
+      <link name="wall">
+        <collision name="col"><geometry><box><size>60 0.3 2</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>60 0.3 2</size></box></geometry>
+          <material><ambient>0.5 0.5 0.5 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="perimeter_south">
+      <static>true</static>
+      <pose>0 -30 1 0 0 0</pose>
+      <link name="wall">
+        <collision name="col"><geometry><box><size>60 0.3 2</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>60 0.3 2</size></box></geometry>
+          <material><ambient>0.5 0.5 0.5 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- LNG storage tank A -->
+    <model name="tank_a">
+      <static>true</static>
+      <pose>10 8 2 0 0 0</pose>
+      <link name="body">
+        <collision name="col"><geometry><cylinder><radius>4</radius><length>4</length></cylinder></geometry></collision>
+        <visual name="vis">
+          <geometry><cylinder><radius>4</radius><length>4</length></cylinder></geometry>
+          <material><ambient>0.8 0.8 0.9 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- LNG storage tank B (source of simulated leak) -->
+    <model name="tank_b">
+      <static>true</static>
+      <pose>-8 10 2 0 0 0</pose>
+      <link name="body">
+        <collision name="col"><geometry><cylinder><radius>4</radius><length>4</length></cylinder></geometry></collision>
+        <visual name="vis">
+          <geometry><cylinder><radius>4</radius><length>4</length></cylinder></geometry>
+          <material><ambient>0.8 0.8 0.9 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Service lane / gate area -->
+    <model name="gate_structure">
+      <static>true</static>
+      <pose>25 0 1 0 0 0</pose>
+      <link name="frame">
+        <collision name="col"><geometry><box><size>1 8 2</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>1 8 2</size></box></geometry>
+          <material><ambient>0.3 0.3 0.3 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- FIXED CCTV CAMERA at gate — sensor with Gazebo Sim native camera -->
+    <model name="cctv_gate">
+      <static>true</static>
+      <pose>22 0 4 0 0.3 3.14</pose>
+      <link name="body">
+        <visual name="vis">
+          <geometry><box><size>0.1 0.2 0.1</size></box></geometry>
+          <material><ambient>0 0 0 1</ambient></material>
+        </visual>
+        <sensor name="cctv_cam" type="camera">
+          <update_rate>2</update_rate>
+          <camera>
+            <horizontal_fov>1.3962634</horizontal_fov>
+            <image><width>640</width><height>480</height><format>R8G8B8</format></image>
+            <clip><near>0.1</near><far>100</far></clip>
+          </camera>
+        </sensor>
+      </link>
+    </model>
+
+    <!-- GAS SENSOR near tank_b base (visual only — gas via ROS2 pub) -->
+    <model name="gas_sensor_0">
+      <static>true</static>
+      <pose>-8 6 0.2 0 0 0</pose>
+      <link name="body">
+        <visual name="vis">
+          <geometry><box><size>0.1 0.1 0.2</size></box></geometry>
+          <material><ambient>1 0.5 0 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- DRONE MODEL with downward camera -->
+    <model name="drone">
+      <pose>0 0 15 0 0 0</pose>
+      <static>true</static>
+      <link name="base_link">
+        <visual name="body_vis">
+          <geometry><box><size>0.5 0.5 0.15</size></box></geometry>
+          <material><ambient>0.1 0.1 0.1 1</ambient></material>
+        </visual>
+        <collision name="body_col">
+          <geometry><box><size>0.5 0.5 0.15</size></box></geometry>
+        </collision>
+        <sensor name="drone_cam" type="camera">
+          <pose>0 0 -0.08 0 1.5707 0</pose>
+          <update_rate>5</update_rate>
+          <camera>
+            <horizontal_fov>1.0472</horizontal_fov>
+            <image><width>1280</width><height>720</height><format>R8G8B8</format></image>
+            <clip><near>0.5</near><far>200</far></clip>
+          </camera>
+        </sensor>
+      </link>
+    </model>
+
+  </world>
+</sdf>

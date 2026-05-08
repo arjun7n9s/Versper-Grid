@@ -1,0 +1,200 @@
+"""Qwen-VL client (vLLM OpenAI-compatible endpoint).
+
+Design contract:
+- If `VLLM_BASE_URL` is unset, `is_enabled()` returns False and callers must
+  fall back to `engine.synthesize_from_ingest`. This guarantees the demo runs
+  with no GPU backend.
+- When enabled, we POST a multi-image chat completion to vLLM serving
+  Qwen-VL (default model `Qwen/Qwen2.5-VL-7B-Instruct`). Up to 5 sampled
+  keyframes are passed in a single request as the expert review recommended.
+- The model is instructed to return strict JSON conforming to
+  `VLMObservationsBundle`. Output is validated by Pydantic; on parse failure
+  we raise `VLMClientError` and the caller falls back to deterministic
+  synthesis (never hallucinated fields silently injected into UI state).
+
+Environment variables:
+- `VLLM_BASE_URL`         e.g. http://127.0.0.1:9001 (no trailing slash)
+- `VLLM_MODEL`            default: Qwen/Qwen2.5-VL-7B-Instruct
+- `VLLM_API_KEY`          optional; vLLM allows any non-empty token
+- `VLLM_TIMEOUT_SECONDS`  default: 90
+- `VLLM_MAX_FRAMES`       default: 5 (hard ceiling, expert recommendation)
+"""
+from __future__ import annotations
+
+import base64
+import json
+import os
+from typing import Iterable, Literal
+
+import httpx
+from pydantic import BaseModel, Field, ValidationError
+
+
+class VLMClientError(RuntimeError):
+    """Raised when the VLM call fails or returns unparseable output."""
+
+
+class VLMObservation(BaseModel):
+    entity: str
+    type: Literal["Entity", "Location", "Hazard", "Constraint"]
+    observation: str
+    confidence: float = Field(ge=0, le=1)
+    location_hint: str | None = None
+
+
+class VLMUncertainty(BaseModel):
+    kind: Literal[
+        "missing_data",
+        "model_disagreement",
+        "stale_evidence",
+        "simulation_sensitivity",
+    ]
+    detail: str
+
+
+class VLMObservationsBundle(BaseModel):
+    """Strict schema the VLM is asked to follow. Drop everything outside this."""
+
+    source_uuid: str
+    observations: list[VLMObservation] = Field(default_factory=list, max_length=12)
+    uncertainties: list[VLMUncertainty] = Field(default_factory=list, max_length=8)
+
+
+_SYSTEM_PROMPT = (
+    "You are VesperGrid's evidence parser for an industrial safety operational "
+    "twin. You receive sampled drone or CCTV keyframes from a fictional port "
+    "logistics yard. Return ONLY a single JSON object that conforms exactly to "
+    "the VLMObservationsBundle schema. Do not include explanations, markdown "
+    "fences, or commentary outside the JSON. Each observation must cite the "
+    "single source_uuid you were given. Use confidence in [0,1]. If you cannot "
+    "determine something, do not invent it; instead emit a missing_data "
+    "uncertainty. Allowed observation types: Entity, Location, Hazard, "
+    "Constraint. Allowed uncertainty kinds: missing_data, model_disagreement, "
+    "stale_evidence, simulation_sensitivity."
+)
+
+
+def _env(name: str, default: str | None = None) -> str | None:
+    v = os.environ.get(name)
+    return v if v not in (None, "") else default
+
+
+def is_enabled() -> bool:
+    """True iff a vLLM endpoint is configured. Used by the ingest path to
+    decide between live inference and deterministic synthesis."""
+    return bool(_env("VLLM_BASE_URL"))
+
+
+def _data_url_for(image_bytes: bytes, mime: str = "image/jpeg") -> str:
+    return f"data:{mime};base64,{base64.b64encode(image_bytes).decode('ascii')}"
+
+
+def _build_messages(
+    source_uuid: str,
+    field_notes: str,
+    image_data_urls: list[str],
+) -> list[dict]:
+    user_content: list[dict] = []
+    for url in image_data_urls:
+        user_content.append({"type": "image_url", "image_url": {"url": url}})
+    user_content.append(
+        {
+            "type": "text",
+            "text": (
+                f"source_uuid: {source_uuid}\n"
+                f"operator_field_notes: {field_notes or '(none)'}\n"
+                "Return the JSON now."
+            ),
+        }
+    )
+    return [
+        {"role": "system", "content": _SYSTEM_PROMPT},
+        {"role": "user", "content": user_content},
+    ]
+
+
+def _strip_json(text: str) -> str:
+    """Best-effort strip of ```json fences and surrounding chatter."""
+    s = text.strip()
+    if s.startswith("```"):
+        # remove leading fence (```json or ```)
+        s = s.split("\n", 1)[-1]
+    if s.endswith("```"):
+        s = s[: s.rfind("```")]
+    # find outermost JSON object
+    start = s.find("{")
+    end = s.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        return s[start : end + 1]
+    return s
+
+
+async def parse_evidence(
+    *,
+    source_uuid: str,
+    field_notes: str,
+    image_payloads: Iterable[bytes],
+    image_mime: str = "image/jpeg",
+) -> VLMObservationsBundle:
+    """Send a multi-image multimodal request to Qwen-VL via vLLM.
+
+    Caller is responsible for sampling/downscaling frames before passing
+    them in. We hard-cap at `VLLM_MAX_FRAMES` to avoid OOM (expert review
+    failure mode #1 on ROCm).
+    """
+    if not is_enabled():
+        raise VLMClientError("VLLM_BASE_URL is not configured")
+
+    base_url = _env("VLLM_BASE_URL", "").rstrip("/")
+    model = _env("VLLM_MODEL", "Qwen/Qwen2.5-VL-7B-Instruct")
+    api_key = _env("VLLM_API_KEY", "vespergrid-local")
+    timeout = float(_env("VLLM_TIMEOUT_SECONDS", "90"))
+    max_frames = int(_env("VLLM_MAX_FRAMES", "5"))
+
+    images = list(image_payloads)[:max_frames]
+    image_urls = [_data_url_for(img, mime=image_mime) for img in images]
+
+    payload = {
+        "model": model,
+        "messages": _build_messages(source_uuid, field_notes, image_urls),
+        "temperature": 0.1,
+        "max_tokens": 768,
+        "response_format": {"type": "json_object"},
+    }
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.post(
+                f"{base_url}/v1/chat/completions",
+                json=payload,
+                headers=headers,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+    except httpx.HTTPError as exc:
+        raise VLMClientError(f"vLLM request failed: {exc}") from exc
+
+    try:
+        text = data["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError) as exc:
+        raise VLMClientError(f"unexpected vLLM response shape: {data!r}") from exc
+
+    cleaned = _strip_json(text)
+    try:
+        parsed = json.loads(cleaned)
+    except json.JSONDecodeError as exc:
+        raise VLMClientError(
+            f"VLM did not return valid JSON: {text[:400]!r}"
+        ) from exc
+
+    # Force the source_uuid to the one we issued (defends against drift)
+    parsed["source_uuid"] = source_uuid
+
+    try:
+        return VLMObservationsBundle.model_validate(parsed)
+    except ValidationError as exc:
+        raise VLMClientError(f"VLM output failed schema validation: {exc}") from exc

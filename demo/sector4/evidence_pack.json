@@ -1,0 +1,36 @@
+{
+  "scenario_id": "sector4-solvent-containment",
+  "title": "Sector 4 Solvent Containment",
+  "location": "Synthetic Port Logistics Corridor (Chennai North reference)",
+  "fictional": true,
+  "sources": [
+    {
+      "source_uuid": "SRC-IMG-1042",
+      "kind": "image",
+      "path": "drone_keyframe_src_img_1042.png",
+      "claim": "Thermal/vapor anomaly near container stack",
+      "confidence": 0.89
+    },
+    {
+      "source_uuid": "SRC-VID-2217",
+      "kind": "video_keyframe",
+      "path": "cctv_gate4_src_vid_2217.png",
+      "claim": "Gate 4 service lane appears blocked",
+      "confidence": 0.81
+    },
+    {
+      "source_uuid": "SRC-TXT-7781",
+      "kind": "transcript",
+      "path": "operator_transcript_src_txt_7781.txt",
+      "claim": "Hydrant pressure unstable; Gate 4 route uncertain",
+      "confidence": 0.74
+    },
+    {
+      "source_uuid": "SRC-SEN-0924",
+      "kind": "sensor",
+      "path": "wind_sensor_src_sen_0924.png",
+      "claim": "Wind pushes vapor toward fuel-adjacent lane",
+      "confidence": 0.93
+    }
+  ]
+}

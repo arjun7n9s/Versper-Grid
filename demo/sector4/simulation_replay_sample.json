@@ -1,0 +1,32 @@
+{
+  "scenario_id": "sector4-solvent-containment",
+  "simulation_kind": "bounded_route_hazard_scoring",
+  "steps": [
+    {
+      "t": 0,
+      "blocked_route_risk": 0.44,
+      "junction_e_risk": 0.21,
+      "vapor_drift_radius_m": 80
+    },
+    {
+      "t": 60,
+      "blocked_route_risk": 0.71,
+      "junction_e_risk": 0.25,
+      "vapor_drift_radius_m": 115
+    },
+    {
+      "t": 120,
+      "blocked_route_risk": 0.82,
+      "junction_e_risk": 0.29,
+      "vapor_drift_radius_m": 150
+    },
+    {
+      "t": 180,
+      "blocked_route_risk": 0.88,
+      "junction_e_risk": 0.32,
+      "vapor_drift_radius_m": 180
+    }
+  ],
+  "recommended_route": "Junction E",
+  "caveat": "Vapor drift sensitive to wind direction; rerun on next sensor update."
+}

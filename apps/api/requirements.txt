@@ -1,0 +1,14 @@
+fastapi==0.124.2
+uvicorn[standard]==0.38.0
+pydantic==2.12.5
+pydantic-settings==2.12.0
+httpx==0.28.1
+sse-starlette==2.4.1
+python-multipart==0.0.20
+Pillow>=10.0.0
+# VLM inference deps (install separately on GPU machine):
+# torch>=2.4.0
+# transformers>=4.52.0
+# accelerate>=0.33.0
+# bitsandbytes>=0.43.0
+# qwen-vl-utils>=0.0.8

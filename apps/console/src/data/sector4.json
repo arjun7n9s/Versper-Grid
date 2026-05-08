@@ -1,0 +1,144 @@
+{
+  "incident": "Sector 4 Solvent Containment",
+  "category": "Critical Infrastructure Operational Twin",
+  "location": "Chennai North Port Logistics Corridor",
+  "clock": "T+18 min",
+  "thesis": "A sampled drone frame, gate camera clip, and operator note indicate a solvent container breach near a blocked service lane. VesperGrid recommends candidate containment routes while preserving source lineage and uncertainty.",
+  "confidence": 0.84,
+  "evidence": [
+    {
+      "id": "ev-thermal",
+      "sourceUuid": "SRC-IMG-1042",
+      "source": "Drone keyframe 03",
+      "kind": "image",
+      "summary": "Bright thermal band appears beside stacked polymer containers in Sector 4.",
+      "confidence": 0.89,
+      "signal": "heat and vapor signature",
+      "linkedZoneId": "z1"
+    },
+    {
+      "id": "ev-gate",
+      "sourceUuid": "SRC-VID-2217",
+      "source": "Gate 4 CCTV sample",
+      "kind": "video",
+      "summary": "Service vehicles are queuing at the same lane marked clear in the radio note.",
+      "confidence": 0.81,
+      "signal": "route obstruction",
+      "linkedZoneId": "z3"
+    },
+    {
+      "id": "ev-radio",
+      "sourceUuid": "SRC-TXT-7781",
+      "source": "Operator transcript",
+      "kind": "report",
+      "summary": "Operator reports hydrant pressure instability and asks for tanker relay confirmation.",
+      "confidence": 0.74,
+      "signal": "resource constraint",
+      "linkedZoneId": "z1"
+    },
+    {
+      "id": "ev-weather",
+      "sourceUuid": "SRC-SEN-0924",
+      "source": "Wind sensor strip",
+      "kind": "sensor",
+      "summary": "Sustained 21 km/h wind is pushing vapor toward fuel-adjacent storage lanes.",
+      "confidence": 0.93,
+      "signal": "spread vector",
+      "linkedZoneId": "z2"
+    }
+  ],
+  "zones": [
+    {
+      "id": "z1",
+      "label": "Leak Core",
+      "x": 42,
+      "y": 48,
+      "radius": 17,
+      "severity": "critical",
+      "rationale": "Thermal keyframe and operator note agree on active containment risk."
+    },
+    {
+      "id": "z2",
+      "label": "Vapor Drift",
+      "x": 66,
+      "y": 36,
+      "radius": 14,
+      "severity": "elevated",
+      "rationale": "Wind strip projects vapor toward fuel-adjacent storage lane."
+    },
+    {
+      "id": "z3",
+      "label": "Blocked Service Lane",
+      "x": 31,
+      "y": 72,
+      "radius": 12,
+      "severity": "watch",
+      "rationale": "Video sample contradicts the radio claim that the route is clear."
+    }
+  ],
+  "actions": [
+    {
+      "id": "a1",
+      "title": "Route containment team through Junction E instead of Gate 4",
+      "owner": "Yard operations lead",
+      "etaMinutes": 4,
+      "impact": 91,
+      "confidence": 0.86,
+      "caveat": "Candidate plan only: verify obstruction at Gate 4 before dispatch.",
+      "sourceEntityId": "SRC-VID-2217",
+      "status": "candidate"
+    },
+    {
+      "id": "a2",
+      "title": "Stage foam unit at north-east perimeter",
+      "owner": "Industrial safety lead",
+      "etaMinutes": 7,
+      "impact": 87,
+      "confidence": 0.82,
+      "caveat": "Hydrant pressure is unstable; tanker relay remains required.",
+      "sourceEntityId": "SRC-TXT-7781",
+      "status": "candidate"
+    },
+    {
+      "id": "a3",
+      "title": "Hold fuel-adjacent lane access until vapor drift is rechecked",
+      "owner": "Port authority",
+      "etaMinutes": 3,
+      "impact": 78,
+      "confidence": 0.79,
+      "caveat": "Wind sensitivity is high; rerun after next sensor update.",
+      "sourceEntityId": "SRC-SEN-0924",
+      "status": "candidate"
+    }
+  ],
+  "uncertainties": [
+    {
+      "id": "u1",
+      "kind": "model_disagreement",
+      "title": "Route contradiction",
+      "detail": "Radio note says Gate 4 is clear, but CCTV sample shows a vehicle queue.",
+      "severity": "elevated",
+      "sourceEntityIds": ["SRC-VID-2217", "SRC-TXT-7781"]
+    },
+    {
+      "id": "u2",
+      "kind": "simulation_sensitivity",
+      "title": "Wind-driven vapor drift",
+      "detail": "Small wind changes alter the recommended perimeter by 60-90 meters.",
+      "severity": "watch",
+      "sourceEntityIds": ["SRC-SEN-0924"]
+    }
+  ],
+  "gpu": [
+    { "label": "MI300X · Qwen-VL parser", "workload": "5-keyframe multimodal prompt via vLLM ROCm (TP=1)", "utilization": 88, "memoryGb": 18, "latencyMs": 6400 },
+    { "label": "MI300X · KV cache", "workload": "Paged attention reserved for warm Qwen-VL context", "utilization": 12, "memoryGb": 24, "latencyMs": 0 },
+    { "label": "MI300X · multi-image decode", "workload": "Image patch tokenization at 720p", "utilization": 41, "memoryGb": 6, "latencyMs": 480 },
+    { "label": "MI300X · headroom", "workload": "Free VRAM available for larger model (e.g. Qwen2.5-VL-32B)", "utilization": 0, "memoryGb": 144, "latencyMs": 0 }
+  ],
+  "brief": [
+    "Highest-confidence risk: solvent leak core with vapor drift toward fuel-adjacent lane.",
+    "Candidate plan: route containment through Junction E because Gate 4 has conflicting evidence.",
+    "Resource constraint: hydrant pressure instability requires tanker relay confirmation.",
+    "Human approval required before dispatch; VesperGrid is decision support, not an autonomous authority."
+  ]
+}
