@@ -106,6 +106,167 @@
         <material><ambient>0.18 0.18 0.18 1</ambient><diffuse>0.24 0.24 0.24 1</diffuse><specular>0.03 0.03 0.03 1</specular>
         <pbr><metal><roughness>0.96</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
 
+    <!-- ═══ CCTV GATE: pole + camera merged into one model (no float) ═══ -->
+    <model name="cctv_gate"><static>true</static>
+      <pose>0 -195 0 0 0 0</pose>
+      <!-- LINK 1: pole structure -->
+      <link name="pole_link">
+        <pose>0 0 0 0 0 0</pose>
+        <collision name="pole_c"><pose>0 0 5 0 0 0</pose>
+          <geometry><cylinder><radius>0.20</radius><length>10</length></cylinder></geometry>
+        </collision>
+        <!-- Base flange -->
+        <visual name="base_v"><pose>0 0 0.4 0 0 0</pose>
+          <geometry><cylinder><radius>0.5</radius><length>0.8</length></cylinder></geometry>
+          <material><ambient>0.30 0.30 0.30 1</ambient><diffuse>0.38 0.38 0.38 1</diffuse>
+          <pbr><metal><roughness>0.85</roughness><metalness>0.1</metalness></metal></pbr></material>
+        </visual>
+        <!-- Vertical pole -->
+        <visual name="pole_v"><pose>0 0 5 0 0 0</pose>
+          <geometry><cylinder><radius>0.20</radius><length>10</length></cylinder></geometry>
+          <material><ambient>0.22 0.22 0.24 1</ambient><diffuse>0.28 0.28 0.30 1</diffuse>
+          <pbr><metal><roughness>0.35</roughness><metalness>0.82</metalness></metal></pbr></material>
+        </visual>
+        <!-- Horizontal mounting arm (extends -Y from pole top, 2m) -->
+        <visual name="arm_v"><pose>0 -1.0 9.5 0 1.5707 0</pose>
+          <geometry><cylinder><radius>0.10</radius><length>2.0</length></cylinder></geometry>
+          <material><ambient>0.22 0.22 0.24 1</ambient><diffuse>0.28 0.28 0.30 1</diffuse>
+          <pbr><metal><roughness>0.35</roughness><metalness>0.82</metalness></metal></pbr></material>
+        </visual>
+        <!-- Camera housing mounted at arm tip (0,-2,9.5) relative to pole origin) -->
+        <!-- Box body: 0.5×1.2×0.5, pitched slightly down (-0.30 rad), yaw 1.5707 faces gate -->
+        <visual name="cam_housing"><pose>0 -2.0 9.5 0 -0.30 1.5707</pose>
+          <geometry><box><size>0.50 1.2 0.50</size></box></geometry>
+          <material><ambient>0.10 0.10 0.10 1</ambient><diffuse>0.15 0.15 0.15 1</diffuse>
+          <specular>0.4 0.4 0.4 1</specular>
+          <pbr><metal><roughness>0.40</roughness><metalness>0.5</metalness></metal></pbr></material>
+        </visual>
+        <!-- Sun-shield hood (top of box) -->
+        <visual name="cam_hood"><pose>0 -2.0 9.88 0 -0.30 1.5707</pose>
+          <geometry><box><size>0.55 1.0 0.08</size></box></geometry>
+          <material><ambient>0.06 0.06 0.06 1</ambient><diffuse>0.10 0.10 0.10 1</diffuse>
+          <pbr><metal><roughness>0.45</roughness><metalness>0.5</metalness></metal></pbr></material>
+        </visual>
+        <!-- Lens ring (front face of housing in body frame: offset along -X of rotated body) -->
+        <visual name="cam_lens_ring"><pose>-0.61 -2.0 9.5 0 -0.30 0</pose>
+          <geometry><cylinder><radius>0.18</radius><length>0.04</length></cylinder></geometry>
+          <material><ambient>0.04 0.04 0.04 1</ambient><diffuse>0.06 0.06 0.06 1</diffuse>
+          <pbr><metal><roughness>0.3</roughness><metalness>0.7</metalness></metal></pbr></material>
+        </visual>
+        <!-- Glass lens -->
+        <visual name="cam_lens_glass"><pose>-0.645 -2.0 9.5 0 -0.30 0</pose>
+          <geometry><cylinder><radius>0.14</radius><length>0.02</length></cylinder></geometry>
+          <material><ambient>0.02 0.06 0.18 1</ambient><diffuse>0.04 0.10 0.28 1</diffuse>
+          <specular>0.95 0.95 1.0 1</specular>
+          <pbr><metal><roughness>0.05</roughness><metalness>0.4</metalness></metal></pbr></material>
+        </visual>
+        <!-- IR LED ring -->
+        <visual name="cam_ir"><pose>-0.66 -2.0 9.5 0 -0.30 0</pose>
+          <geometry><torus><radius>0.20</radius><tube_radius>0.012</tube_radius></torus></geometry>
+          <material><ambient>0.40 0.05 0.05 1</ambient><diffuse>0.55 0.10 0.10 1</diffuse>
+          <emissive>0.30 0.04 0.04 1</emissive></material>
+        </visual>
+        <!-- Status LED green -->
+        <visual name="cam_led"><pose>-0.5 -2.22 9.7 0 -0.30 0</pose>
+          <geometry><sphere><radius>0.025</radius></sphere></geometry>
+          <material><ambient>0.0 0.85 0.0 1</ambient><diffuse>0.0 1.0 0.0 1</diffuse>
+          <emissive>0.0 0.75 0.0 1</emissive></material>
+        </visual>
+      </link>
+      <link name="cam_sensor_link">
+        <pose>0 -2.0 9.5 0 -0.30 1.5707</pose>
+        <inertial><mass>0.001</mass><inertia><ixx>0.0001</ixx><iyy>0.0001</iyy><izz>0.0001</izz></inertia></inertial>
+        <sensor name="cctv_gate_cam" type="camera">
+          <pose>0 0 0 0 0 0</pose>
+          <update_rate>5</update_rate>
+          <camera>
+            <horizontal_fov>1.3962634</horizontal_fov>
+            <image><width>1280</width><height>720</height><format>R8G8B8</format></image>
+            <clip><near>0.1</near><far>400</far></clip>
+            <noise><type>gaussian</type><mean>0</mean><stddev>0.003</stddev></noise>
+          </camera>
+        </sensor>
+      </link>
+      <joint name="cam_gate_joint" type="fixed">
+        <parent>pole_link</parent>
+        <child>cam_sensor_link</child>
+      </joint>
+    </model>
+    <!-- ═══ CCTV SOUTH: pole + camera merged (watches B-4 leakage) ═══ -->
+    <model name="cctv_south"><static>true</static>
+      <pose>30 -85 0 0 0 0</pose>
+      <link name="pole_link">
+        <pose>0 0 0 0 0 0</pose>
+        <collision name="pole_c"><pose>0 0 6 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>12</length></cylinder></geometry>
+        </collision>
+        <visual name="base_v"><pose>0 0 0.4 0 0 0</pose>
+          <geometry><cylinder><radius>0.55</radius><length>0.8</length></cylinder></geometry>
+          <material><ambient>0.30 0.30 0.30 1</ambient><diffuse>0.38 0.38 0.38 1</diffuse>
+          <pbr><metal><roughness>0.85</roughness><metalness>0.1</metalness></metal></pbr></material>
+        </visual>
+        <visual name="pole_v"><pose>0 0 6 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>12</length></cylinder></geometry>
+          <material><ambient>0.22 0.22 0.24 1</ambient><diffuse>0.28 0.28 0.30 1</diffuse>
+          <pbr><metal><roughness>0.35</roughness><metalness>0.82</metalness></metal></pbr></material>
+        </visual>
+        <!-- Arm extends -Y from pole top -->
+        <visual name="arm_v"><pose>0 -1.2 11.5 0 1.5707 0</pose>
+          <geometry><cylinder><radius>0.11</radius><length>2.4</length></cylinder></geometry>
+          <material><ambient>0.22 0.22 0.24 1</ambient><diffuse>0.28 0.28 0.30 1</diffuse>
+          <pbr><metal><roughness>0.35</roughness><metalness>0.82</metalness></metal></pbr></material>
+        </visual>
+        <!-- Camera housing at arm tip (0,-2.4,11.5), pitched down 25° watching B-4 -->
+        <visual name="cam_housing"><pose>0 -2.4 11.5 0 -0.40 1.5707</pose>
+          <geometry><box><size>0.55 1.4 0.55</size></box></geometry>
+          <material><ambient>0.10 0.10 0.10 1</ambient><diffuse>0.15 0.15 0.15 1</diffuse>
+          <specular>0.4 0.4 0.4 1</specular>
+          <pbr><metal><roughness>0.40</roughness><metalness>0.5</metalness></metal></pbr></material>
+        </visual>
+        <visual name="cam_hood"><pose>0 -2.4 11.84 0 -0.40 1.5707</pose>
+          <geometry><box><size>0.60 1.2 0.10</size></box></geometry>
+          <material><ambient>0.06 0.06 0.06 1</ambient><diffuse>0.10 0.10 0.10 1</diffuse>
+          <pbr><metal><roughness>0.45</roughness><metalness>0.5</metalness></metal></pbr></material>
+        </visual>
+        <visual name="cam_lens_ring"><pose>-0.72 -2.4 11.5 0 -0.40 0</pose>
+          <geometry><cylinder><radius>0.20</radius><length>0.05</length></cylinder></geometry>
+          <material><ambient>0.04 0.04 0.04 1</ambient><diffuse>0.06 0.06 0.06 1</diffuse>
+          <pbr><metal><roughness>0.3</roughness><metalness>0.7</metalness></metal></pbr></material>
+        </visual>
+        <visual name="cam_lens_glass"><pose>-0.745 -2.4 11.5 0 -0.40 0</pose>
+          <geometry><cylinder><radius>0.16</radius><length>0.02</length></cylinder></geometry>
+          <material><ambient>0.02 0.06 0.18 1</ambient><diffuse>0.04 0.10 0.28 1</diffuse>
+          <specular>0.95 0.95 1.0 1</specular>
+          <pbr><metal><roughness>0.05</roughness><metalness>0.4</metalness></metal></pbr></material>
+        </visual>
+        <!-- Recording LED — red (actively recording) -->
+        <visual name="cam_led"><pose>-0.60 -2.62 11.72 0 -0.40 0</pose>
+          <geometry><sphere><radius>0.028</radius></sphere></geometry>
+          <material><ambient>1.0 0.0 0.0 1</ambient><diffuse>1.0 0.0 0.0 1</diffuse>
+          <emissive>0.85 0.0 0.0 1</emissive></material>
+        </visual>
+      </link>
+      <link name="cam_sensor_link">
+        <!-- Sensor origin at arm tip, pitched down to watch B-4 -->
+        <pose>0 -2.4 11.5 0 -0.40 1.5707</pose>
+        <inertial><mass>0.001</mass><inertia><ixx>0.0001</ixx><iyy>0.0001</iyy><izz>0.0001</izz></inertia></inertial>
+        <sensor name="cctv_south_cam" type="camera">
+          <pose>0 0 0 0 0 0</pose>
+          <update_rate>5</update_rate>
+          <camera>
+            <horizontal_fov>1.2217</horizontal_fov>
+            <image><width>1280</width><height>720</height><format>R8G8B8</format></image>
+            <clip><near>0.1</near><far>400</far></clip>
+            <noise><type>gaussian</type><mean>0</mean><stddev>0.003</stddev></noise>
+          </camera>
+        </sensor>
+      </link>
+      <joint name="cam_south_joint" type="fixed">
+        <parent>pole_link</parent>
+        <child>cam_sensor_link</child>
+      </joint>
+    </model>
+
     <!-- ═══════════════════════════════════════════════════════════════ -->
     <!-- ═══ PRIORITY ENTITIES (top of entity tree)                  ═══ -->
     <!-- ═══ Drones · CCTV cameras · Flare stacks                    ═══ -->
@@ -230,104 +391,6 @@
     <model name="drone_pad"><static>true</static><pose>0 10 0.02 0 0 0</pose><link name="l">
       <visual name="v"><geometry><cylinder><radius>4.5</radius><length>0.04</length></cylinder></geometry>
         <material><ambient>0.58 0.48 0.08 1</ambient><diffuse>0.72 0.60 0.10 1</diffuse></material></visual></link></model>
-    <model name="cctv_gate"><static>true</static><pose>0 -196.0 9.5 0 0.30 1.5707</pose><link name="body">
-      <!-- Main body box (0.5 × 1.2 × 0.5 — clearly visible) -->
-      <visual name="housing"><geometry><box><size>0.50 1.2 0.50</size></box></geometry>
-        <material><ambient>0.10 0.10 0.10 1</ambient><diffuse>0.15 0.15 0.15 1</diffuse><specular>0.4 0.4 0.4 1</specular>
-        <pbr><metal><roughness>0.40</roughness><metalness>0.5</metalness></metal></pbr></material></visual>
-      <!-- Sun shield hood on top -->
-      <visual name="hood"><pose>0 0.05 0.30 0 0 0</pose><geometry><box><size>0.55 1.0 0.08</size></box></geometry>
-        <material><ambient>0.06 0.06 0.06 1</ambient><diffuse>0.10 0.10 0.10 1</diffuse>
-        <pbr><metal><roughness>0.45</roughness><metalness>0.5</metalness></metal></pbr></material></visual>
-      <!-- Front face (lens side) -->
-      <visual name="face"><pose>0 -0.61 0 0 0 0</pose><geometry><box><size>0.50 0.02 0.50</size></box></geometry>
-        <material><ambient>0.05 0.05 0.05 1</ambient><diffuse>0.08 0.08 0.08 1</diffuse></material></visual>
-      <!-- Round glass lens — big and obvious -->
-      <visual name="lens_ring"><pose>0 -0.62 0 0 0 0</pose><geometry><cylinder><radius>0.18</radius><length>0.04</length></cylinder></geometry>
-        <material><ambient>0.04 0.04 0.04 1</ambient><diffuse>0.06 0.06 0.06 1</diffuse>
-        <pbr><metal><roughness>0.3</roughness><metalness>0.7</metalness></metal></pbr></material></visual>
-      <visual name="lens_glass"><pose>0 -0.645 0 0 0 0</pose><geometry><cylinder><radius>0.14</radius><length>0.02</length></cylinder></geometry>
-        <material><ambient>0.02 0.06 0.18 1</ambient><diffuse>0.04 0.10 0.28 1</diffuse><specular>0.95 0.95 1.0 1</specular>
-        <pbr><metal><roughness>0.05</roughness><metalness>0.4</metalness></metal></pbr></material></visual>
-      <!-- IR LED ring -->
-      <visual name="ir_ring"><pose>0 -0.66 0 0 0 0</pose><geometry><torus><radius>0.20</radius><tube_radius>0.012</tube_radius></torus></geometry>
-        <material><ambient>0.40 0.05 0.05 1</ambient><diffuse>0.55 0.10 0.10 1</diffuse>
-        <emissive>0.30 0.04 0.04 1</emissive></material></visual>
-      <!-- Mount bracket (attaches to arm above) -->
-      <visual name="bracket"><pose>0 0 0.35 0 0 0</pose><geometry><box><size>0.18 0.18 0.30</size></box></geometry>
-        <material><ambient>0.18 0.18 0.20 1</ambient><diffuse>0.24 0.24 0.26 1</diffuse>
-        <pbr><metal><roughness>0.4</roughness><metalness>0.8</metalness></metal></pbr></material></visual>
-      <!-- Recording status LED — green -->
-      <visual name="rec_led"><pose>0.22 -0.50 0.20 0 0 0</pose><geometry><sphere><radius>0.025</radius></sphere></geometry>
-        <material><ambient>0.0 0.85 0.0 1</ambient><diffuse>0.0 1.0 0.0 1</diffuse>
-        <emissive>0.0 0.75 0.0 1</emissive></material></visual>
-      <!-- Brand label area -->
-      <visual name="label"><pose>0.255 0 0.0 0 0 0</pose><geometry><box><size>0.02 0.30 0.10</size></box></geometry>
-        <material><ambient>0.85 0.85 0.85 1</ambient><diffuse>0.95 0.95 0.95 1</diffuse></material></visual>
-      <sensor name="cctv_cam" type="camera">
-        <update_rate>2</update_rate>
-        <camera>
-          <horizontal_fov>1.3962634</horizontal_fov>
-          <image><width>1280</width><height>720</height><format>R8G8B8</format></image>
-          <clip><near>0.1</near><far>400</far></clip>
-          <noise><type>gaussian</type><mean>0</mean><stddev>0.003</stddev></noise>
-        </camera>
-      </sensor></link></model>
-    <model name="cctv_gate_pole"><static>true</static><pose>0 -195 0 0 0 0</pose><link name="l">
-      <collision name="pole_c"><pose>0 0 5 0 0 0</pose><geometry><cylinder><radius>0.20</radius><length>10</length></cylinder></geometry></collision>
-      <visual name="base_v"><pose>0 0 0.4 0 0 0</pose><geometry><cylinder><radius>0.5</radius><length>0.8</length></cylinder></geometry>
-        <material><ambient>0.30 0.30 0.30 1</ambient><diffuse>0.38 0.38 0.38 1</diffuse>
-        <pbr><metal><roughness>0.85</roughness><metalness>0.1</metalness></metal></pbr></material></visual>
-      <visual name="pole_v"><pose>0 0 5 0 0 0</pose><geometry><cylinder><radius>0.20</radius><length>10</length></cylinder></geometry>
-        <material><ambient>0.22 0.22 0.24 1</ambient><diffuse>0.28 0.28 0.30 1</diffuse>
-        <pbr><metal><roughness>0.35</roughness><metalness>0.82</metalness></metal></pbr></material></visual>
-      <!-- Horizontal mounting arm -->
-      <visual name="arm_v"><pose>0 -1.0 9.5 0 1.5707 0</pose><geometry><cylinder><radius>0.10</radius><length>2.0</length></cylinder></geometry>
-        <material><ambient>0.22 0.22 0.24 1</ambient><diffuse>0.28 0.28 0.30 1</diffuse>
-        <pbr><metal><roughness>0.35</roughness><metalness>0.82</metalness></metal></pbr></material></visual>
-    </link></model>
-    <model name="cctv_south"><static>true</static><pose>30 -86.4 11.5 0 0.40 1.5707</pose><link name="body">
-      <visual name="housing"><geometry><box><size>0.55 1.4 0.55</size></box></geometry>
-        <material><ambient>0.10 0.10 0.10 1</ambient><diffuse>0.15 0.15 0.15 1</diffuse><specular>0.4 0.4 0.4 1</specular>
-        <pbr><metal><roughness>0.40</roughness><metalness>0.5</metalness></metal></pbr></material></visual>
-      <visual name="hood"><pose>0 0.05 0.33 0 0 0</pose><geometry><box><size>0.60 1.2 0.10</size></box></geometry>
-        <material><ambient>0.06 0.06 0.06 1</ambient><diffuse>0.10 0.10 0.10 1</diffuse>
-        <pbr><metal><roughness>0.45</roughness><metalness>0.5</metalness></metal></pbr></material></visual>
-      <visual name="lens_ring"><pose>0 -0.72 0 0 0 0</pose><geometry><cylinder><radius>0.20</radius><length>0.05</length></cylinder></geometry>
-        <material><ambient>0.04 0.04 0.04 1</ambient><diffuse>0.06 0.06 0.06 1</diffuse>
-        <pbr><metal><roughness>0.3</roughness><metalness>0.7</metalness></metal></pbr></material></visual>
-      <visual name="lens_glass"><pose>0 -0.745 0 0 0 0</pose><geometry><cylinder><radius>0.16</radius><length>0.02</length></cylinder></geometry>
-        <material><ambient>0.02 0.06 0.18 1</ambient><diffuse>0.04 0.10 0.28 1</diffuse><specular>0.95 0.95 1.0 1</specular>
-        <pbr><metal><roughness>0.05</roughness><metalness>0.4</metalness></metal></pbr></material></visual>
-      <visual name="bracket"><pose>0 0 0.40 0 0 0</pose><geometry><box><size>0.20 0.20 0.30</size></box></geometry>
-        <material><ambient>0.18 0.18 0.20 1</ambient><diffuse>0.24 0.24 0.26 1</diffuse>
-        <pbr><metal><roughness>0.4</roughness><metalness>0.8</metalness></metal></pbr></material></visual>
-      <visual name="rec_led"><pose>0.25 -0.55 0.22 0 0 0</pose><geometry><sphere><radius>0.028</radius></sphere></geometry>
-        <material><ambient>1.0 0.0 0.0 1</ambient><diffuse>1.0 0.0 0.0 1</diffuse>
-        <emissive>0.85 0.0 0.0 1</emissive></material></visual>
-      <visual name="label"><pose>0.28 0 0.0 0 0 0</pose><geometry><box><size>0.02 0.32 0.10</size></box></geometry>
-        <material><ambient>0.85 0.85 0.85 1</ambient><diffuse>0.95 0.95 0.95 1</diffuse></material></visual>
-      <sensor name="cctv_south_cam" type="camera">
-        <update_rate>2</update_rate>
-        <camera>
-          <horizontal_fov>1.2217</horizontal_fov>
-          <image><width>1280</width><height>720</height><format>R8G8B8</format></image>
-          <clip><near>0.1</near><far>400</far></clip>
-          <noise><type>gaussian</type><mean>0</mean><stddev>0.003</stddev></noise>
-        </camera>
-      </sensor></link></model>
-    <model name="cctv_south_pole"><static>true</static><pose>30 -85 0 0 0 0</pose><link name="l">
-      <collision name="pole_c"><pose>0 0 6 0 0 0</pose><geometry><cylinder><radius>0.22</radius><length>12</length></cylinder></geometry></collision>
-      <visual name="base_v"><pose>0 0 0.4 0 0 0</pose><geometry><cylinder><radius>0.55</radius><length>0.8</length></cylinder></geometry>
-        <material><ambient>0.30 0.30 0.30 1</ambient><diffuse>0.38 0.38 0.38 1</diffuse>
-        <pbr><metal><roughness>0.85</roughness><metalness>0.1</metalness></metal></pbr></material></visual>
-      <visual name="pole_v"><pose>0 0 6 0 0 0</pose><geometry><cylinder><radius>0.22</radius><length>12</length></cylinder></geometry>
-        <material><ambient>0.22 0.22 0.24 1</ambient><diffuse>0.28 0.28 0.30 1</diffuse>
-        <pbr><metal><roughness>0.35</roughness><metalness>0.82</metalness></metal></pbr></material></visual>
-      <visual name="arm_v"><pose>0 -1.2 11.5 0 1.5707 0</pose><geometry><cylinder><radius>0.11</radius><length>2.4</length></cylinder></geometry>
-        <material><ambient>0.22 0.22 0.24 1</ambient><diffuse>0.28 0.28 0.30 1</diffuse>
-        <pbr><metal><roughness>0.35</roughness><metalness>0.82</metalness></metal></pbr></material></visual>
-    </link></model>
     <model name="flare_b1"><static>true</static><pose>110 90 12 0 0 0</pose><link name="l">
       <collision name="c"><geometry><cylinder><radius>2.2</radius><length>24</length></cylinder></geometry></collision>
       <visual name="v"><geometry><cylinder><radius>2.2</radius><length>24</length></cylinder></geometry>
@@ -703,26 +766,6 @@
         <material><ambient>1.0 0.04 0.04 1</ambient><diffuse>1.0 0.04 0.04 1</diffuse>
         <emissive>0.90 0.0 0.0 1</emissive></material></visual></link></model>
 
-    <!-- ═══ CCTV GATE — industrial box camera on wall-mount arm ═══ -->
-
-    <!-- BIG visible camera — boxy industrial bullet style -->
-
-    <!-- ═══ CCTV SOUTH — same big bullet style, watching B-4 ═══ -->
-
-
-
-    <!-- ═══ DRONE D-1 (PRIMARY): large, hovering near B-4 incident, has the camera feed ═══ -->
-
-    <!-- DRONE D-2: smaller, parked on the launch pad — NO camera feed -->
-
-    <!-- DRONE D-3: medium, patrolling Sector 2 — NO camera feed -->
-
-    <!-- ═══ SECTOR 2: Processing Complex (east, centred 450, 0) ═══ -->
-    <!-- Fences forming inter-sector perimeter -->
-    <model name="s2_fence_n"><static>true</static><pose>450 180 2 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>360 0.5 4</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>360 0.5 4</size></box></geometry>
-        <material><ambient>0.26 0.24 0.22 1</ambient><diffuse>0.34 0.32 0.28 1</diffuse></material></visual></link></model>
     <model name="s2_fence_s"><static>true</static><pose>450 -180 2 0 0 0</pose><link name="l">
       <collision name="c"><geometry><box><size>360 0.5 4</size></box></geometry></collision>
       <visual name="v"><geometry><box><size>360 0.5 4</size></box></geometry>

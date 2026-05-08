@@ -44,28 +44,59 @@ def generate_launch_description():
         output="screen",
     )
 
-    # Bridge camera topics from Gazebo to ROS2
-    # /camera drones and CCTV publish to gz topic; we bridge to ROS2
-    bridge_cctv = Node(
+    # ── Camera bridge nodes ──────────────────────────────────────────────────
+    # Ignition publishes on /world/<world>/model/<m>/link/<l>/sensor/<s>/image
+    # ros_gz_bridge needs the full ign path; we remap to clean ROS2 topic names.
+    W = "lng_terminal"
+    IMG = "@sensor_msgs/msg/Image[ignition.msgs.Image"
+    CAM_INFO = "@sensor_msgs/msg/CameraInfo[ignition.msgs.CameraInfo"
+
+    def _ign(model, link, sensor, suffix):
+        return f"/world/{W}/model/{model}/link/{link}/sensor/{sensor}/{suffix}"
+
+    bridge_cctv_gate = Node(
         package="ros_gz_bridge",
         executable="parameter_bridge",
-        name="cctv_bridge",
+        name="bridge_cctv_gate",
         arguments=[
-            "/cctv_gate/body/cctv_cam/image@sensor_msgs/msg/Image[ignition.msgs.Image",
+            f"{_ign('cctv_gate',  'cam_sensor_link', 'cctv_gate_cam',  'image')}{IMG}",
+            f"{_ign('cctv_gate',  'cam_sensor_link', 'cctv_gate_cam',  'camera_info')}{CAM_INFO}",
+        ],
+        remappings=[
+            (_ign("cctv_gate", "cam_sensor_link", "cctv_gate_cam", "image"),       "/cctv_gate/image_raw"),
+            (_ign("cctv_gate", "cam_sensor_link", "cctv_gate_cam", "camera_info"), "/cctv_gate/camera_info"),
         ],
         output="screen",
-        remappings=[("/cctv_gate/body/cctv_cam/image", "/cctv_gate/image_raw")],
+    )
+
+    bridge_cctv_south = Node(
+        package="ros_gz_bridge",
+        executable="parameter_bridge",
+        name="bridge_cctv_south",
+        arguments=[
+            f"{_ign('cctv_south', 'cam_sensor_link', 'cctv_south_cam', 'image')}{IMG}",
+            f"{_ign('cctv_south', 'cam_sensor_link', 'cctv_south_cam', 'camera_info')}{CAM_INFO}",
+        ],
+        remappings=[
+            (_ign("cctv_south", "cam_sensor_link", "cctv_south_cam", "image"),       "/cctv_south/image_raw"),
+            (_ign("cctv_south", "cam_sensor_link", "cctv_south_cam", "camera_info"), "/cctv_south/camera_info"),
+        ],
+        output="screen",
     )
 
     bridge_drone = Node(
         package="ros_gz_bridge",
         executable="parameter_bridge",
-        name="drone_bridge",
+        name="bridge_drone_d1",
         arguments=[
-            "/drone_d1/base_link/drone_cam/image@sensor_msgs/msg/Image[ignition.msgs.Image",
+            f"{_ign('drone_d1', 'base_link', 'drone_cam', 'image')}{IMG}",
+            f"{_ign('drone_d1', 'base_link', 'drone_cam', 'camera_info')}{CAM_INFO}",
+        ],
+        remappings=[
+            (_ign("drone_d1", "base_link", "drone_cam", "image"),       "/drone_d1/image_raw"),
+            (_ign("drone_d1", "base_link", "drone_cam", "camera_info"), "/drone_d1/camera_info"),
         ],
         output="screen",
-        remappings=[("/drone_d1/base_link/drone_cam/image", "/drone_cam/image_raw")],
     )
 
     # Drone animation is handled by the C++ DroneAnimator system plugin
@@ -79,6 +110,7 @@ def generate_launch_description():
         set_libgl,
         set_plugin_path,
         gz_sim,
-        bridge_cctv,
+        bridge_cctv_gate,
+        bridge_cctv_south,
         bridge_drone,
     ])
