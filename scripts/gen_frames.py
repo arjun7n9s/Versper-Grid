@@ -14,10 +14,10 @@ from PIL import Image, ImageDraw, ImageFilter
 API = 'http://localhost:8742'
 INTERVAL = 8   # seconds between frame bundles
 
-def draw_scanlines(d, w, h, step=4):
-    # draw subtle dark scanlines — no alpha, use a dark-on-dark tone
+def draw_scanlines(d, w, h, step=6):
+    # very subtle scanlines — only on images that look good with them
     for y in range(0, h, step):
-        d.line([(0, y), (w, y)], fill=(4, 6, 4), width=1)
+        d.line([(0, y), (w, y)], fill=(0, 0, 0), width=1)
 
 def make_cctv_south(t: float) -> bytes:
     """Ground-level CCTV facing Tank B-4 from the south.
@@ -111,7 +111,7 @@ def make_cctv_south(t: float) -> bytes:
                   fill=(r_col, g_col, b_col))
 
     # ── Overlay / HUD ──────────────────────────────────────────────────
-    draw_scanlines(d, W, H)
+    # no scanlines on this camera — clean night-vision look
     # timestamp overlay top-right (CCTV style)
     d.rectangle([460, 4, 636, 20], fill=(0, 0, 0))
     d.text((462, 5), time.strftime('%Y-%m-%d  %H:%M:%S'), fill=(0, 220, 0))

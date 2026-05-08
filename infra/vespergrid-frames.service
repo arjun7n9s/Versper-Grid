@@ -1,0 +1,15 @@
+[Unit]
+Description=VesperGrid Animated Frame Generator
+After=vespergrid-api.service
+Requires=vespergrid-api.service
+
+[Service]
+ExecStart=/opt/vespergrid-venv/bin/python3 /opt/vespergrid/scripts/gen_frames.py
+Restart=always
+RestartSec=5
+WorkingDirectory=/opt/vespergrid
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
