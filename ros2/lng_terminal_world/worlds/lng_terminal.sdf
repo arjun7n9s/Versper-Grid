@@ -27,6 +27,8 @@
     <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
     <plugin filename="gz-sim-user-commands-system"    name="gz::sim::systems::UserCommands"/>
     <plugin filename="gz-sim-sensors-system"          name="gz::sim::systems::Sensors"/>
+    <!-- In-sim drone animator (C++ system plugin, 1 kHz direct ECM writes) -->
+    <plugin filename="DroneAnimator" name="vesper::DroneAnimator"/>
 
     <!-- Pre-dawn scene: warmer tones, fog visible, grid disabled -->
     <scene>

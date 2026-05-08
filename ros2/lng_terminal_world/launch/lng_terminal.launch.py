@@ -30,6 +30,13 @@ def generate_launch_description():
         name="LIBGL_ALWAYS_SOFTWARE",
         value="0",
     )
+    # Tell Gazebo where to find our custom system plugins (DroneAnimator.so).
+    # ament installs them to share/<pkg>/../../lib/<pkg>/
+    plugin_dir = str(pkg_dir.parent.parent / "lib" / "lng_terminal_world")
+    set_plugin_path = SetEnvironmentVariable(
+        name="IGN_GAZEBO_SYSTEM_PLUGIN_PATH",
+        value=plugin_dir + ":" + os.environ.get("IGN_GAZEBO_SYSTEM_PLUGIN_PATH", ""),
+    )
 
     # Ignition Fortress: use 'ign gazebo' (Harmonic uses 'gz sim')
     gz_sim = ExecuteProcess(
@@ -61,22 +68,17 @@ def generate_launch_description():
         remappings=[("/drone_d1/base_link/drone_cam/image", "/drone_cam/image_raw")],
     )
 
-    # Drone pose animator — uses ign service set_pose to move D-1/D-2/D-3.
-    # Reusable strategy for any future pose publisher.
-    drone_animator = Node(
-        package="lng_terminal_world",
-        executable="drone_animator.py",
-        name="drone_animator",
-        output="screen",
-    )
+    # Drone animation is handled by the C++ DroneAnimator system plugin
+    # loaded directly by Gazebo (see worlds/lng_terminal.sdf). Runs at 1 kHz
+    # inside the sim loop — zero subprocess/network overhead.
 
     return LaunchDescription([
         set_render_engine,
         set_render_engine_gui,
         set_mesa_gl,
         set_libgl,
+        set_plugin_path,
         gz_sim,
         bridge_cctv,
         bridge_drone,
-        drone_animator,
     ])
