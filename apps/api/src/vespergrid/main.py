@@ -145,6 +145,25 @@ async def serve_evidence(uuid: str, filename: str):
     return FileResponse(str(target), media_type="image/jpeg")
 
 
+@app.get("/api/jobs")
+async def list_jobs(limit: int = 20) -> list[dict]:
+    """Return recent job summaries — used by the dashboard ticker to discover
+    jobs submitted by frame_sampler (and any other producers)."""
+    jobs = registry.list_recent(limit=min(limit, 50))
+    return [
+        {
+            "job_id": j.id,
+            "status": j.status,
+            "backend": j.backend,
+            "stage": j.events[-1].stage if j.events else "queued",
+            "progress": j.events[-1].progress if j.events else 0.0,
+            "message": j.events[-1].message if j.events else "",
+            "ts": j.events[-1].ts if j.events else 0.0,
+        }
+        for j in reversed(jobs)
+    ]
+
+
 def _require_job(job_id: str) -> IngestJob:
     job = registry.get(job_id)
     if job is None:

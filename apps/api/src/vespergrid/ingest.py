@@ -109,6 +109,10 @@ class JobRegistry:
     def get(self, job_id: str) -> IngestJob | None:
         return self._jobs.get(job_id)
 
+    def list_recent(self, limit: int = 20) -> list[IngestJob]:
+        jobs = list(self._jobs.values())
+        return jobs[-limit:]
+
     async def emit(
         self,
         job: IngestJob,

@@ -576,6 +576,25 @@ function LiveJobTicker({
   // Register watchJob with parent so upload jobs can be piped in
   useEffect(() => { onRegister(watchJob); }, []);  // eslint-disable-line
 
+  // Poll /api/jobs every 8s — auto-discovers jobs from frame_sampler
+  useEffect(() => {
+    const poll = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/jobs?limit=10`);
+        if (!res.ok) return;
+        const jobs: Array<{ job_id: string; backend: string; status: string }> = await res.json();
+        for (const j of jobs) {
+          if (!watchedRef.current.has(j.job_id)) {
+            watchJob(j.job_id, j.backend);
+          }
+        }
+      } catch { /* silent — API may be briefly unavailable */ }
+    };
+    poll();
+    const id = window.setInterval(poll, 8_000);
+    return () => window.clearInterval(id);
+  }, []);  // eslint-disable-line
+
   if (ticks.length === 0) {
     return (
       <section className="panel ticker-panel">
