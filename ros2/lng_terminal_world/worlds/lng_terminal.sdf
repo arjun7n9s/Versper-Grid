@@ -27,6 +27,7 @@
     <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
     <plugin filename="gz-sim-user-commands-system"    name="gz::sim::systems::UserCommands"/>
     <plugin filename="gz-sim-sensors-system"          name="gz::sim::systems::Sensors"/>
+    <plugin filename="ignition-gazebo-particle-emitter2-system" name="ignition::gazebo::systems::ParticleEmitter2"/>
 
     <!-- Pre-dawn scene: warmer tones, fog visible, grid disabled -->
     <scene>
@@ -234,106 +235,50 @@
       <visual name="flange"><pose>8.1 0 4.5 0 1.5707 0</pose><geometry><cylinder><radius>0.4</radius><length>0.7</length></cylinder></geometry>
         <material><ambient>0.85 0.38 0.08 1</ambient><diffuse>0.95 0.45 0.10 1</diffuse><emissive>0.40 0.14 0.0 1</emissive></material></visual>
     </link></model>
-    <model name="plume_0"><static>true</static><pose>68.0 -65.0 1.5 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>1.2</radius></sphere></geometry>
-        <transparency>0.44999999999999996</transparency>
-        <material><ambient>0.75 0.85 0.78 0.55</ambient><diffuse>0.82 0.90 0.84 0.55</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
-    <model name="plume_1"><static>true</static><pose>68.35 -64.85 2.8 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>1.38</radius></sphere></geometry>
-        <transparency>0.485</transparency>
-        <material><ambient>0.75 0.85 0.78 0.515</ambient><diffuse>0.82 0.90 0.84 0.515</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
-    <model name="plume_2"><static>true</static><pose>68.7 -64.7 4.1 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>1.56</radius></sphere></geometry>
-        <transparency>0.52</transparency>
-        <material><ambient>0.75 0.85 0.78 0.48000000000000004</ambient><diffuse>0.82 0.90 0.84 0.48000000000000004</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
-    <model name="plume_3"><static>true</static><pose>69.05 -64.55 5.4 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>1.74</radius></sphere></geometry>
-        <transparency>0.5549999999999999</transparency>
-        <material><ambient>0.75 0.85 0.78 0.44500000000000006</ambient><diffuse>0.82 0.90 0.84 0.44500000000000006</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
-    <model name="plume_4"><static>true</static><pose>69.4 -64.4 6.7 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>1.92</radius></sphere></geometry>
-        <transparency>0.59</transparency>
-        <material><ambient>0.75 0.85 0.78 0.41000000000000003</ambient><diffuse>0.82 0.90 0.84 0.41000000000000003</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
-    <model name="plume_5"><static>true</static><pose>69.75 -64.25 8.0 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>2.0999999999999996</radius></sphere></geometry>
-        <transparency>0.625</transparency>
-        <material><ambient>0.75 0.85 0.78 0.375</ambient><diffuse>0.82 0.90 0.84 0.375</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
-    <model name="plume_6"><static>true</static><pose>70.1 -64.1 9.3 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>2.2800000000000002</radius></sphere></geometry>
-        <transparency>0.6599999999999999</transparency>
-        <material><ambient>0.75 0.85 0.78 0.34</ambient><diffuse>0.82 0.90 0.84 0.34</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
-    <model name="plume_7"><static>true</static><pose>70.45 -63.95 10.6 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>2.46</radius></sphere></geometry>
-        <transparency>0.695</transparency>
-        <material><ambient>0.75 0.85 0.78 0.30500000000000005</ambient><diffuse>0.82 0.90 0.84 0.30500000000000005</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
-    <model name="plume_8"><static>true</static><pose>70.8 -63.8 11.9 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>2.6399999999999997</radius></sphere></geometry>
-        <transparency>0.73</transparency>
-        <material><ambient>0.75 0.85 0.78 0.27</ambient><diffuse>0.82 0.90 0.84 0.27</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
-    <model name="plume_9"><static>true</static><pose>71.15 -63.65 13.200000000000001 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>2.82</radius></sphere></geometry>
-        <transparency>0.765</transparency>
-        <material><ambient>0.75 0.85 0.78 0.235</ambient><diffuse>0.82 0.90 0.84 0.235</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
-    <model name="plume_10"><static>true</static><pose>71.5 -63.5 14.5 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>3.0</radius></sphere></geometry>
-        <transparency>0.8</transparency>
-        <material><ambient>0.75 0.85 0.78 0.2</ambient><diffuse>0.82 0.90 0.84 0.2</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
-    <model name="plume_11"><static>true</static><pose>71.85 -63.35 15.8 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>3.1799999999999997</radius></sphere></geometry>
-        <transparency>0.835</transparency>
-        <material><ambient>0.75 0.85 0.78 0.16500000000000004</ambient><diffuse>0.82 0.90 0.84 0.16500000000000004</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
-    <model name="plume_12"><static>true</static><pose>72.2 -63.2 17.1 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>3.3600000000000003</radius></sphere></geometry>
-        <transparency>0.87</transparency>
-        <material><ambient>0.75 0.85 0.78 0.13</ambient><diffuse>0.82 0.90 0.84 0.13</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
-    <model name="plume_13"><static>true</static><pose>72.55 -63.05 18.400000000000002 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>3.54</radius></sphere></geometry>
-        <transparency>0.905</transparency>
-        <material><ambient>0.75 0.85 0.78 0.09499999999999997</ambient><diffuse>0.82 0.90 0.84 0.09499999999999997</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
-    <model name="haze_0"><static>true</static><pose>65 -63.0 0.8 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>1.8</radius></sphere></geometry>
-        <transparency>0.75</transparency>
-        <material><ambient>0.75 0.85 0.78 0.25</ambient><diffuse>0.82 0.90 0.84 0.25</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
-    <model name="haze_1"><static>true</static><pose>67 -62.2 0.8 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>1.8</radius></sphere></geometry>
-        <transparency>0.75</transparency>
-        <material><ambient>0.75 0.85 0.78 0.25</ambient><diffuse>0.82 0.90 0.84 0.25</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
-    <model name="haze_2"><static>true</static><pose>69 -61.4 0.8 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>1.8</radius></sphere></geometry>
-        <transparency>0.75</transparency>
-        <material><ambient>0.75 0.85 0.78 0.25</ambient><diffuse>0.82 0.90 0.84 0.25</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
-    <model name="haze_3"><static>true</static><pose>71 -60.6 0.8 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>1.8</radius></sphere></geometry>
-        <transparency>0.75</transparency>
-        <material><ambient>0.75 0.85 0.78 0.25</ambient><diffuse>0.82 0.90 0.84 0.25</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
-    <model name="haze_4"><static>true</static><pose>73 -59.8 0.8 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>1.8</radius></sphere></geometry>
-        <transparency>0.75</transparency>
-        <material><ambient>0.75 0.85 0.78 0.25</ambient><diffuse>0.82 0.90 0.84 0.25</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
-    <model name="haze_5"><static>true</static><pose>75 -59.0 0.8 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>1.8</radius></sphere></geometry>
-        <transparency>0.75</transparency>
-        <material><ambient>0.75 0.85 0.78 0.25</ambient><diffuse>0.82 0.90 0.84 0.25</diffuse><specular>0.0 0.0 0.0 1</specular></material></visual>
-    </link></model>
+
+    <!-- ═══ GAS LEAK PLUME at B-4 (real textured particle emitter) ═══ -->
+    <model name="gas_plume_main"><static>true</static><pose>68 -65 1.5 0 0 0</pose><link name="l">
+      <particle_emitter name="emitter" type="point">
+        <emitting>true</emitting>
+        <particle_size>3 3 3</particle_size>
+        <rate>18</rate>
+        <duration>0</duration>
+        <lifetime>7</lifetime>
+        <min_velocity>0.6</min_velocity>
+        <max_velocity>1.6</max_velocity>
+        <scale_rate>1.0</scale_rate>
+        <color_start>0.78 0.92 0.82 1</color_start>
+        <color_end>0.85 0.94 0.88 0</color_end>
+        <material>
+          <diffuse>0.78 0.92 0.82 1</diffuse>
+          <pbr><metal>
+            <albedo_map>materials/textures/smoke.png</albedo_map>
+          </metal></pbr>
+        </material>
+        <color_range_image>materials/textures/smoke.png</color_range_image>
+      </particle_emitter></link></model>
+
+    <!-- Low-level haze drift -->
+    <model name="gas_plume_low"><static>true</static><pose>66 -63 0.5 0 0 0</pose><link name="l">
+      <particle_emitter name="emitter" type="point">
+        <emitting>true</emitting>
+        <particle_size>2 2 2</particle_size>
+        <rate>10</rate>
+        <duration>0</duration>
+        <lifetime>10</lifetime>
+        <min_velocity>0.1</min_velocity>
+        <max_velocity>0.5</max_velocity>
+        <scale_rate>0.6</scale_rate>
+        <color_start>0.82 0.92 0.85 0.7</color_start>
+        <color_end>0.88 0.94 0.90 0</color_end>
+        <material>
+          <diffuse>0.82 0.92 0.85 1</diffuse>
+          <pbr><metal>
+            <albedo_map>materials/textures/smoke.png</albedo_map>
+          </metal></pbr>
+        </material>
+        <color_range_image>materials/textures/smoke.png</color_range_image>
+      </particle_emitter></link></model>
 
     <!-- Pipe rack across Sector 1 -->
     <model name="rk1"><static>true</static><pose>-90 0 4.5 0 0 0</pose><link name="l">
@@ -388,11 +333,48 @@
       <visual name="v"><geometry><cylinder><radius>0.7</radius><length>22</length></cylinder></geometry>
         <material><ambient>0.22 0.22 0.25 1</ambient><diffuse>0.30 0.30 0.33 1</diffuse>
         <pbr><metal><roughness>0.35</roughness><metalness>0.86</metalness></metal></pbr></material></visual></link></model>
-    <!-- Flare flame: emissive orange sphere at top -->
-    <model name="flare_flame"><static>true</static><pose>110 90 68 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>2.5</radius></sphere></geometry>
-        <material><ambient>1.0 0.55 0.08 1</ambient><diffuse>1.0 0.62 0.12 1</diffuse><specular>0.3 0.15 0.02 1</specular>
-        <emissive>0.85 0.35 0.05 1</emissive></material></visual></link></model>
+    <!-- ═══ Flare flame: layered emissive cones (white-hot core → yellow → orange → red) ═══ -->
+    <!-- Inner white-hot core (small, brightest) -->
+    <model name="flare_core"><static>true</static><pose>110 90 67 0 0 0</pose><link name="l">
+      <visual name="v"><geometry><cylinder><radius>0.6</radius><length>3</length></cylinder></geometry>
+        <material><ambient>1.0 1.0 0.85 1</ambient><diffuse>1.0 1.0 0.92 1</diffuse>
+        <emissive>1.0 0.95 0.70 1</emissive></material></visual></link></model>
+    <!-- Yellow mid -->
+    <model name="flare_mid"><static>true</static><pose>110 90 69 0 0 0</pose><link name="l">
+      <visual name="v"><geometry><cylinder><radius>1.2</radius><length>5</length></cylinder></geometry>
+        <material><ambient>1.0 0.85 0.20 1</ambient><diffuse>1.0 0.90 0.30 1</diffuse>
+        <emissive>0.9 0.65 0.10 1</emissive></material></visual></link></model>
+    <!-- Orange outer -->
+    <model name="flare_outer"><static>true</static><pose>110 90 71 0 0 0</pose><link name="l">
+      <visual name="v"><geometry><cylinder><radius>1.8</radius><length>7</length></cylinder></geometry>
+        <material><ambient>1.0 0.50 0.08 1</ambient><diffuse>1.0 0.55 0.12 1</diffuse>
+        <emissive>0.85 0.32 0.05 1</emissive></material></visual></link></model>
+    <!-- Red tip flicker top -->
+    <model name="flare_tip"><static>true</static><pose>110 90 75 0 0 0</pose><link name="l">
+      <visual name="v"><geometry><sphere><radius>1.4</radius></sphere></geometry>
+        <material><ambient>0.85 0.20 0.05 1</ambient><diffuse>0.95 0.25 0.06 1</diffuse>
+        <emissive>0.70 0.15 0.03 1</emissive></material></visual></link></model>
+    <!-- Real particle smoke trail rising from flare -->
+    <model name="flare_smoke"><static>true</static><pose>110 90 78 0 0 0</pose><link name="l">
+      <particle_emitter name="emitter" type="point">
+        <emitting>true</emitting>
+        <particle_size>4 4 4</particle_size>
+        <rate>20</rate>
+        <duration>0</duration>
+        <lifetime>5</lifetime>
+        <min_velocity>3</min_velocity>
+        <max_velocity>6</max_velocity>
+        <scale_rate>1.5</scale_rate>
+        <color_start>0.40 0.20 0.10 1</color_start>
+        <color_end>0.10 0.10 0.12 0</color_end>
+        <material>
+          <diffuse>0.6 0.6 0.6 1</diffuse>
+          <pbr><metal>
+            <albedo_map>materials/textures/smoke.png</albedo_map>
+          </metal></pbr>
+        </material>
+        <color_range_image>materials/textures/smoke.png</color_range_image>
+      </particle_emitter></link></model>
 
     <!-- Control room -->
     <model name="control_room"><static>true</static><pose>-85 20 5.5 0 0 0</pose><link name="l">
@@ -733,11 +715,38 @@
       <visual name="v"><geometry><cylinder><radius>1.2</radius><length>20</length></cylinder></geometry>
         <material><ambient>0.25 0.25 0.28 1</ambient><diffuse>0.32 0.32 0.35 1</diffuse>
         <pbr><metal><roughness>0.40</roughness><metalness>0.82</metalness></metal></pbr></material></visual></link></model>
-    <!-- Refinery flare flame -->
-    <model name="ref_flame"><static>true</static><pose>-100 550 105 0 0 0</pose><link name="l">
-      <visual name="v"><geometry><sphere><radius>4</radius></sphere></geometry>
-        <material><ambient>1.0 0.55 0.08 1</ambient><diffuse>1.0 0.62 0.12 1</diffuse>
-        <emissive>0.95 0.40 0.06 1</emissive></material></visual></link></model>
+    <!-- Refinery flare flame: layered massive flame -->
+    <model name="ref_flame_core"><static>true</static><pose>-100 550 104 0 0 0</pose><link name="l">
+      <visual name="v"><geometry><cylinder><radius>1.0</radius><length>5</length></cylinder></geometry>
+        <material><ambient>1.0 1.0 0.85 1</ambient><diffuse>1.0 1.0 0.92 1</diffuse><emissive>1.0 0.95 0.70 1</emissive></material></visual></link></model>
+    <model name="ref_flame_mid"><static>true</static><pose>-100 550 107 0 0 0</pose><link name="l">
+      <visual name="v"><geometry><cylinder><radius>2.2</radius><length>9</length></cylinder></geometry>
+        <material><ambient>1.0 0.85 0.20 1</ambient><diffuse>1.0 0.90 0.30 1</diffuse><emissive>0.9 0.65 0.10 1</emissive></material></visual></link></model>
+    <model name="ref_flame_outer"><static>true</static><pose>-100 550 110 0 0 0</pose><link name="l">
+      <visual name="v"><geometry><cylinder><radius>3.2</radius><length>13</length></cylinder></geometry>
+        <material><ambient>1.0 0.50 0.08 1</ambient><diffuse>1.0 0.55 0.12 1</diffuse><emissive>0.85 0.32 0.05 1</emissive></material></visual></link></model>
+    <model name="ref_flame_tip"><static>true</static><pose>-100 550 116 0 0 0</pose><link name="l">
+      <visual name="v"><geometry><sphere><radius>2.8</radius></sphere></geometry>
+        <material><ambient>0.85 0.20 0.05 1</ambient><diffuse>0.95 0.25 0.06 1</diffuse><emissive>0.70 0.15 0.03 1</emissive></material></visual></link></model>
+    <!-- Refinery smoke trail -->
+    <model name="ref_smoke"><static>true</static><pose>-100 550 122 0 0 0</pose><link name="l">
+      <particle_emitter name="emitter" type="point">
+        <emitting>true</emitting>
+        <particle_size>8 8 8</particle_size>
+        <rate>15</rate>
+        <duration>0</duration>
+        <lifetime>8</lifetime>
+        <min_velocity>4</min_velocity>
+        <max_velocity>8</max_velocity>
+        <scale_rate>2.5</scale_rate>
+        <color_start>0.30 0.20 0.15 1</color_start>
+        <color_end>0.08 0.08 0.10 0</color_end>
+        <material>
+          <diffuse>0.4 0.4 0.4 1</diffuse>
+          <pbr><metal><albedo_map>materials/textures/smoke.png</albedo_map></metal></pbr>
+        </material>
+        <color_range_image>materials/textures/smoke.png</color_range_image>
+      </particle_emitter></link></model>
     <light type="point" name="ref_flare_light"><cast_shadows>false</cast_shadows><pose>-100 550 100 0 0 0</pose>
       <diffuse>1.0 0.45 0.08 1</diffuse><specular>0.5 0.2 0.02 1</specular>
       <attenuation><range>300</range><constant>0.2</constant><linear>0.01</linear><quadratic>0.00005</quadratic></attenuation></light>

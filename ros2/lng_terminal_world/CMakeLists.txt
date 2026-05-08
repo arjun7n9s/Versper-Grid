@@ -3,7 +3,7 @@ project(lng_terminal_world)
 
 find_package(ament_cmake REQUIRED)
 
-install(DIRECTORY worlds launch
+install(DIRECTORY worlds launch materials
   DESTINATION share/${PROJECT_NAME}
 )
 

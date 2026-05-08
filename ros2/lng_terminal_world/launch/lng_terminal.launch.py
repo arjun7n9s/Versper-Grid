@@ -31,9 +31,9 @@ def generate_launch_description():
         value="0",
     )
 
-    # Gazebo Sim (Ignition) server + GUI — verbose for render diagnostics
+    # Ignition Fortress: use 'ign gazebo' (Harmonic uses 'gz sim')
     gz_sim = ExecuteProcess(
-        cmd=["gz", "sim", "-r", "-v4", "--render-engine", "ogre2", world_file],
+        cmd=["ign", "gazebo", "-r", "-v4", "--render-engine", "ogre2", world_file],
         output="screen",
     )
 
@@ -44,7 +44,7 @@ def generate_launch_description():
         executable="parameter_bridge",
         name="cctv_bridge",
         arguments=[
-            "/cctv_gate/body/cctv_cam/image@sensor_msgs/Image[gz.msgs.Image",
+            "/cctv_gate/body/cctv_cam/image@sensor_msgs/msg/Image[ignition.msgs.Image",
         ],
         output="screen",
         remappings=[("/cctv_gate/body/cctv_cam/image", "/cctv_gate/image_raw")],
@@ -55,7 +55,7 @@ def generate_launch_description():
         executable="parameter_bridge",
         name="drone_bridge",
         arguments=[
-            "/drone/base_link/drone_cam/image@sensor_msgs/Image[gz.msgs.Image",
+            "/drone/base_link/drone_cam/image@sensor_msgs/msg/Image[ignition.msgs.Image",
         ],
         output="screen",
         remappings=[("/drone/base_link/drone_cam/image", "/drone_cam/image_raw")],
