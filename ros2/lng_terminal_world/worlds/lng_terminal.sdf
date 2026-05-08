@@ -7,152 +7,553 @@
       <real_time_factor>1.0</real_time_factor>
     </physics>
 
-    <plugin
-      filename="gz-sim-physics-system"
-      name="gz::sim::systems::Physics">
-    </plugin>
-    <plugin
-      filename="gz-sim-scene-broadcaster-system"
-      name="gz::sim::systems::SceneBroadcaster">
-    </plugin>
-    <plugin
-      filename="gz-sim-user-commands-system"
-      name="gz::sim::systems::UserCommands">
-    </plugin>
-    <plugin
-      filename="gz-sim-sensors-system"
-      name="gz::sim::systems::Sensors">
-    </plugin>
+    <plugin filename="gz-sim-physics-system"        name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-user-commands-system"  name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-sensors-system"        name="gz::sim::systems::Sensors"/>
+    <plugin filename="gz-sim-particle-emitter-system" name="gz::sim::systems::ParticleEmitter"/>
 
+    <!-- ── Cinematic lighting & sky ── -->
     <scene>
-      <ambient>0.4 0.4 0.4 1.0</ambient>
-      <background>0.7 0.7 0.7 1.0</background>
+      <ambient>0.25 0.22 0.18 1.0</ambient>
+      <background>0.53 0.65 0.75 1.0</background>
       <shadows>true</shadows>
+      <fog>
+        <color>0.85 0.80 0.72 1</color>
+        <type>linear</type>
+        <start>40</start>
+        <end>120</end>
+        <density>0.006</density>
+      </fog>
+      <sky>
+        <time>7.5</time>
+        <sunrise>6</sunrise>
+        <sunset>20</sunset>
+      </sky>
     </scene>
 
-    <include>
-      <uri>model://ground_plane</uri>
-    </include>
+    <!-- Golden-hour directional sun — low angle creates long dramatic shadows -->
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 50 0 0.4 -0.8</pose>
+      <diffuse>1.0 0.92 0.78 1</diffuse>
+      <specular>0.5 0.46 0.38 1</specular>
+      <direction>-0.5 -0.3 -0.7</direction>
+      <attenuation><range>1000</range><constant>0.9</constant><linear>0.01</linear><quadratic>0.001</quadratic></attenuation>
+    </light>
 
-    <include>
-      <uri>model://sun</uri>
-    </include>
+    <!-- Soft ambient fill from sky (north) -->
+    <light type="directional" name="sky_fill">
+      <cast_shadows>false</cast_shadows>
+      <pose>0 0 20 0 0 0</pose>
+      <diffuse>0.35 0.42 0.55 1</diffuse>
+      <specular>0.05 0.05 0.08 1</specular>
+      <direction>0.2 0.1 -1</direction>
+    </light>
 
-    <!-- Compound perimeter wall (simplified) -->
+    <!-- Emergency red strobe near tank_b (incident atmosphere) -->
+    <light type="point" name="emergency_strobe">
+      <cast_shadows>false</cast_shadows>
+      <pose>-8 8 3 0 0 0</pose>
+      <diffuse>1.0 0.08 0.05 1</diffuse>
+      <specular>0.4 0.02 0.01 1</specular>
+      <attenuation><range>18</range><constant>0.3</constant><linear>0.1</linear><quadratic>0.05</quadratic></attenuation>
+    </light>
+
+    <!-- ── Ground: industrial concrete apron ── -->
+    <model name="ground_concrete">
+      <static>true</static>
+      <pose>0 0 0 0 0 0</pose>
+      <link name="surface">
+        <collision name="col">
+          <geometry><plane><normal>0 0 1</normal><size>120 120</size></plane></geometry>
+        </collision>
+        <visual name="vis">
+          <geometry><plane><normal>0 0 1</normal><size>120 120</size></plane></geometry>
+          <material>
+            <ambient>0.38 0.36 0.33 1</ambient>
+            <diffuse>0.52 0.50 0.46 1</diffuse>
+            <specular>0.06 0.06 0.06 1</specular>
+            <pbr>
+              <metal>
+                <roughness>0.92</roughness>
+                <metalness>0.0</metalness>
+              </metal>
+            </pbr>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ── Perimeter walls — weathered concrete ── -->
     <model name="perimeter_north">
       <static>true</static>
-      <pose>0 30 1 0 0 0</pose>
+      <pose>0 30 1.5 0 0 0</pose>
       <link name="wall">
-        <collision name="col"><geometry><box><size>60 0.3 2</size></box></geometry></collision>
+        <collision name="col"><geometry><box><size>62 0.4 3</size></box></geometry></collision>
         <visual name="vis">
-          <geometry><box><size>60 0.3 2</size></box></geometry>
-          <material><ambient>0.5 0.5 0.5 1</ambient></material>
+          <geometry><box><size>62 0.4 3</size></box></geometry>
+          <material>
+            <ambient>0.42 0.40 0.37 1</ambient>
+            <diffuse>0.55 0.53 0.49 1</diffuse>
+            <specular>0.04 0.04 0.04 1</specular>
+            <pbr><metal><roughness>0.95</roughness><metalness>0.0</metalness></metal></pbr>
+          </material>
         </visual>
       </link>
     </model>
 
     <model name="perimeter_south">
       <static>true</static>
-      <pose>0 -30 1 0 0 0</pose>
+      <pose>0 -30 1.5 0 0 0</pose>
       <link name="wall">
-        <collision name="col"><geometry><box><size>60 0.3 2</size></box></geometry></collision>
+        <collision name="col"><geometry><box><size>62 0.4 3</size></box></geometry></collision>
         <visual name="vis">
-          <geometry><box><size>60 0.3 2</size></box></geometry>
-          <material><ambient>0.5 0.5 0.5 1</ambient></material>
+          <geometry><box><size>62 0.4 3</size></box></geometry>
+          <material>
+            <ambient>0.42 0.40 0.37 1</ambient>
+            <diffuse>0.55 0.53 0.49 1</diffuse>
+            <specular>0.04 0.04 0.04 1</specular>
+            <pbr><metal><roughness>0.95</roughness><metalness>0.0</metalness></metal></pbr>
+          </material>
         </visual>
       </link>
     </model>
 
-    <!-- LNG storage tank A -->
+    <model name="perimeter_east">
+      <static>true</static>
+      <pose>31 0 1.5 0 0 1.5707</pose>
+      <link name="wall">
+        <collision name="col"><geometry><box><size>62 0.4 3</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>62 0.4 3</size></box></geometry>
+          <material>
+            <ambient>0.42 0.40 0.37 1</ambient>
+            <diffuse>0.55 0.53 0.49 1</diffuse>
+            <specular>0.04 0.04 0.04 1</specular>
+            <pbr><metal><roughness>0.95</roughness><metalness>0.0</metalness></metal></pbr>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="perimeter_west">
+      <static>true</static>
+      <pose>-31 0 1.5 0 0 1.5707</pose>
+      <link name="wall">
+        <collision name="col"><geometry><box><size>62 0.4 3</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>62 0.4 3</size></box></geometry>
+          <material>
+            <ambient>0.42 0.40 0.37 1</ambient>
+            <diffuse>0.55 0.53 0.49 1</diffuse>
+            <specular>0.04 0.04 0.04 1</specular>
+            <pbr><metal><roughness>0.95</roughness><metalness>0.0</metalness></metal></pbr>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ── LNG Tank A — brushed steel cylinder with domed cap ── -->
     <model name="tank_a">
       <static>true</static>
-      <pose>10 8 2 0 0 0</pose>
+      <pose>10 8 0 0 0 0</pose>
       <link name="body">
-        <collision name="col"><geometry><cylinder><radius>4</radius><length>4</length></cylinder></geometry></collision>
-        <visual name="vis">
-          <geometry><cylinder><radius>4</radius><length>4</length></cylinder></geometry>
-          <material><ambient>0.8 0.8 0.9 1</ambient></material>
+        <collision name="col"><geometry><cylinder><radius>4</radius><length>8</length></cylinder></geometry></collision>
+        <visual name="shell">
+          <pose>0 0 4 0 0 0</pose>
+          <geometry><cylinder><radius>4</radius><length>8</length></cylinder></geometry>
+          <material>
+            <ambient>0.72 0.74 0.78 1</ambient>
+            <diffuse>0.80 0.82 0.86 1</diffuse>
+            <specular>0.60 0.62 0.65 1</specular>
+            <pbr>
+              <metal>
+                <roughness>0.28</roughness>
+                <metalness>0.85</metalness>
+              </metal>
+            </pbr>
+          </material>
+        </visual>
+        <visual name="dome_top">
+          <pose>0 0 8.1 0 0 0</pose>
+          <geometry><sphere><radius>4.05</radius></sphere></geometry>
+          <material>
+            <ambient>0.68 0.70 0.74 1</ambient>
+            <diffuse>0.76 0.78 0.82 1</diffuse>
+            <specular>0.65 0.66 0.68 1</specular>
+            <pbr><metal><roughness>0.22</roughness><metalness>0.88</metalness></metal></pbr>
+          </material>
+        </visual>
+        <visual name="base_ring">
+          <pose>0 0 0.15 0 0 0</pose>
+          <geometry><cylinder><radius>4.3</radius><length>0.3</length></cylinder></geometry>
+          <material>
+            <ambient>0.30 0.30 0.32 1</ambient>
+            <diffuse>0.38 0.38 0.40 1</diffuse>
+            <specular>0.2 0.2 0.2 1</specular>
+            <pbr><metal><roughness>0.55</roughness><metalness>0.7</metalness></metal></pbr>
+          </material>
         </visual>
       </link>
     </model>
 
-    <!-- LNG storage tank B (source of simulated leak) -->
+    <!-- ── LNG Tank B — leak source, slightly corroded/rust-stained ── -->
     <model name="tank_b">
       <static>true</static>
-      <pose>-8 10 2 0 0 0</pose>
+      <pose>-8 10 0 0 0 0</pose>
       <link name="body">
-        <collision name="col"><geometry><cylinder><radius>4</radius><length>4</length></cylinder></geometry></collision>
-        <visual name="vis">
-          <geometry><cylinder><radius>4</radius><length>4</length></cylinder></geometry>
-          <material><ambient>0.8 0.8 0.9 1</ambient></material>
+        <collision name="col"><geometry><cylinder><radius>4</radius><length>8</length></cylinder></geometry></collision>
+        <visual name="shell">
+          <pose>0 0 4 0 0 0</pose>
+          <geometry><cylinder><radius>4</radius><length>8</length></cylinder></geometry>
+          <material>
+            <ambient>0.65 0.60 0.55 1</ambient>
+            <diffuse>0.70 0.65 0.58 1</diffuse>
+            <specular>0.35 0.32 0.28 1</specular>
+            <pbr>
+              <metal>
+                <roughness>0.58</roughness>
+                <metalness>0.62</metalness>
+              </metal>
+            </pbr>
+          </material>
+        </visual>
+        <visual name="dome_top">
+          <pose>0 0 8.1 0 0 0</pose>
+          <geometry><sphere><radius>4.05</radius></sphere></geometry>
+          <material>
+            <ambient>0.60 0.55 0.50 1</ambient>
+            <diffuse>0.66 0.60 0.53 1</diffuse>
+            <specular>0.30 0.28 0.24 1</specular>
+            <pbr><metal><roughness>0.62</roughness><metalness>0.58</metalness></metal></pbr>
+          </material>
+        </visual>
+        <visual name="base_ring">
+          <pose>0 0 0.15 0 0 0</pose>
+          <geometry><cylinder><radius>4.3</radius><length>0.3</length></cylinder></geometry>
+          <material>
+            <ambient>0.28 0.24 0.20 1</ambient>
+            <diffuse>0.35 0.30 0.25 1</diffuse>
+            <specular>0.1 0.08 0.06 1</specular>
+            <pbr><metal><roughness>0.80</roughness><metalness>0.55</metalness></metal></pbr>
+          </material>
+        </visual>
+        <!-- Rust streak down the side -->
+        <visual name="rust_streak">
+          <pose>3.9 0 3 0 0 0</pose>
+          <geometry><box><size>0.05 0.8 5</size></box></geometry>
+          <material>
+            <ambient>0.55 0.28 0.10 1</ambient>
+            <diffuse>0.62 0.32 0.12 1</diffuse>
+            <specular>0.02 0.01 0.0 1</specular>
+          </material>
         </visual>
       </link>
     </model>
 
-    <!-- Service lane / gate area -->
-    <model name="gate_structure">
+    <!-- ── Gas leak plume (particle emitter) near tank_b base ── -->
+    <model name="gas_plume">
       <static>true</static>
-      <pose>25 0 1 0 0 0</pose>
-      <link name="frame">
-        <collision name="col"><geometry><box><size>1 8 2</size></box></geometry></collision>
+      <pose>-5 9 0.3 0 0 0</pose>
+      <link name="emitter_link">
+        <particle_emitter name="leak_plume" type="box">
+          <emitting>true</emitting>
+          <size>0.4 0.4 0.4</size>
+          <particle_size>0.6 0.6 0.6</particle_size>
+          <rate>8</rate>
+          <min_velocity>0.3</min_velocity>
+          <max_velocity>0.9</max_velocity>
+          <lifetime>4</lifetime>
+          <color_start>0.75 0.82 0.75 0.55</color_start>
+          <color_end>0.85 0.90 0.85 0.0</color_end>
+          <scale_rate>0.6</scale_rate>
+        </particle_emitter>
+      </link>
+    </model>
+
+    <!-- ── Gate structure — steel I-beam frame ── -->
+    <model name="gate_left_post">
+      <static>true</static>
+      <pose>25 -4 3 0 0 0</pose>
+      <link name="post">
         <visual name="vis">
-          <geometry><box><size>1 8 2</size></box></geometry>
-          <material><ambient>0.3 0.3 0.3 1</ambient></material>
+          <geometry><box><size>0.25 0.25 6</size></box></geometry>
+          <material>
+            <ambient>0.28 0.28 0.30 1</ambient>
+            <diffuse>0.35 0.35 0.38 1</diffuse>
+            <specular>0.3 0.3 0.32 1</specular>
+            <pbr><metal><roughness>0.45</roughness><metalness>0.78</metalness></metal></pbr>
+          </material>
+        </visual>
+        <collision name="col"><geometry><box><size>0.25 0.25 6</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <model name="gate_right_post">
+      <static>true</static>
+      <pose>25 4 3 0 0 0</pose>
+      <link name="post">
+        <visual name="vis">
+          <geometry><box><size>0.25 0.25 6</size></box></geometry>
+          <material>
+            <ambient>0.28 0.28 0.30 1</ambient>
+            <diffuse>0.35 0.35 0.38 1</diffuse>
+            <specular>0.3 0.3 0.32 1</specular>
+            <pbr><metal><roughness>0.45</roughness><metalness>0.78</metalness></metal></pbr>
+          </material>
+        </visual>
+        <collision name="col"><geometry><box><size>0.25 0.25 6</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <model name="gate_beam">
+      <static>true</static>
+      <pose>25 0 6.15 0 0 0</pose>
+      <link name="beam">
+        <visual name="vis">
+          <geometry><box><size>0.2 8.5 0.25</size></box></geometry>
+          <material>
+            <ambient>0.28 0.28 0.30 1</ambient>
+            <diffuse>0.35 0.35 0.38 1</diffuse>
+            <specular>0.3 0.3 0.32 1</specular>
+            <pbr><metal><roughness>0.45</roughness><metalness>0.78</metalness></metal></pbr>
+          </material>
         </visual>
       </link>
     </model>
 
-    <!-- FIXED CCTV CAMERA at gate — sensor with Gazebo Sim native camera -->
+    <!-- Warning sign on gate beam -->
+    <model name="hazard_sign">
+      <static>true</static>
+      <pose>25 0 5 0 0 1.5707</pose>
+      <link name="sign">
+        <visual name="vis">
+          <geometry><box><size>0.02 0.6 0.6</size></box></geometry>
+          <material>
+            <ambient>0.95 0.82 0.0 1</ambient>
+            <diffuse>1.0 0.88 0.0 1</diffuse>
+            <specular>0.1 0.09 0.0 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ── CCTV pole + camera housing ── -->
+    <model name="cctv_pole">
+      <static>true</static>
+      <pose>22 0 0 0 0 0</pose>
+      <link name="pole">
+        <visual name="vis">
+          <pose>0 0 2.5 0 0 0</pose>
+          <geometry><cylinder><radius>0.05</radius><length>5</length></cylinder></geometry>
+          <material>
+            <ambient>0.25 0.25 0.27 1</ambient>
+            <diffuse>0.32 0.32 0.34 1</diffuse>
+            <specular>0.35 0.35 0.36 1</specular>
+            <pbr><metal><roughness>0.35</roughness><metalness>0.82</metalness></metal></pbr>
+          </material>
+        </visual>
+        <collision name="col"><pose>0 0 2.5 0 0 0</pose><geometry><cylinder><radius>0.05</radius><length>5</length></cylinder></geometry></collision>
+      </link>
+    </model>
+
     <model name="cctv_gate">
       <static>true</static>
-      <pose>22 0 4 0 0.3 3.14</pose>
+      <pose>22 0 5.2 0 0.45 3.14</pose>
       <link name="body">
-        <visual name="vis">
-          <geometry><box><size>0.1 0.2 0.1</size></box></geometry>
-          <material><ambient>0 0 0 1</ambient></material>
+        <visual name="housing">
+          <geometry><box><size>0.12 0.30 0.12</size></box></geometry>
+          <material>
+            <ambient>0.08 0.08 0.08 1</ambient>
+            <diffuse>0.12 0.12 0.12 1</diffuse>
+            <specular>0.25 0.25 0.25 1</specular>
+            <pbr><metal><roughness>0.30</roughness><metalness>0.75</metalness></metal></pbr>
+          </material>
+        </visual>
+        <visual name="lens">
+          <pose>0.07 0 0 0 1.5707 0</pose>
+          <geometry><cylinder><radius>0.035</radius><length>0.04</length></cylinder></geometry>
+          <material>
+            <ambient>0.02 0.02 0.08 1</ambient>
+            <diffuse>0.03 0.03 0.12 1</diffuse>
+            <specular>0.6 0.6 0.9 1</specular>
+            <pbr><metal><roughness>0.05</roughness><metalness>0.0</metalness></metal></pbr>
+          </material>
         </visual>
         <sensor name="cctv_cam" type="camera">
           <update_rate>2</update_rate>
           <camera>
             <horizontal_fov>1.3962634</horizontal_fov>
-            <image><width>640</width><height>480</height><format>R8G8B8</format></image>
-            <clip><near>0.1</near><far>100</far></clip>
+            <image><width>1280</width><height>720</height><format>R8G8B8</format></image>
+            <clip><near>0.1</near><far>120</far></clip>
+            <noise><type>gaussian</type><mean>0</mean><stddev>0.003</stddev></noise>
           </camera>
         </sensor>
       </link>
     </model>
 
-    <!-- GAS SENSOR near tank_b base (visual only — gas via ROS2 pub) -->
-    <model name="gas_sensor_0">
+    <!-- ── Gas sensor unit — orange enclosure on post ── -->
+    <model name="gas_sensor_post">
       <static>true</static>
-      <pose>-8 6 0.2 0 0 0</pose>
-      <link name="body">
+      <pose>-8 6 0 0 0 0</pose>
+      <link name="post">
         <visual name="vis">
-          <geometry><box><size>0.1 0.1 0.2</size></box></geometry>
-          <material><ambient>1 0.5 0 1</ambient></material>
+          <pose>0 0 0.6 0 0 0</pose>
+          <geometry><cylinder><radius>0.03</radius><length>1.2</length></cylinder></geometry>
+          <material>
+            <ambient>0.25 0.25 0.27 1</ambient>
+            <diffuse>0.30 0.30 0.32 1</diffuse>
+            <specular>0.3 0.3 0.3 1</specular>
+            <pbr><metal><roughness>0.4</roughness><metalness>0.75</metalness></metal></pbr>
+          </material>
         </visual>
       </link>
     </model>
 
-    <!-- DRONE MODEL with downward camera -->
-    <model name="drone">
-      <pose>0 0 15 0 0 0</pose>
+    <model name="gas_sensor_0">
       <static>true</static>
-      <link name="base_link">
-        <visual name="body_vis">
-          <geometry><box><size>0.5 0.5 0.15</size></box></geometry>
-          <material><ambient>0.1 0.1 0.1 1</ambient></material>
+      <pose>-8 6 1.25 0 0 0</pose>
+      <link name="body">
+        <visual name="enclosure">
+          <geometry><box><size>0.14 0.14 0.22</size></box></geometry>
+          <material>
+            <ambient>0.85 0.40 0.0 1</ambient>
+            <diffuse>0.95 0.48 0.0 1</diffuse>
+            <specular>0.15 0.08 0.0 1</specular>
+            <pbr><metal><roughness>0.55</roughness><metalness>0.1</metalness></metal></pbr>
+          </material>
         </visual>
-        <collision name="body_col">
-          <geometry><box><size>0.5 0.5 0.15</size></box></geometry>
-        </collision>
+        <visual name="led_indicator">
+          <pose>0 0.075 0.06 0 0 0</pose>
+          <geometry><sphere><radius>0.018</radius></sphere></geometry>
+          <material>
+            <ambient>0.1 0.9 0.1 1</ambient>
+            <diffuse>0.1 1.0 0.1 1</diffuse>
+            <specular>0.5 1.0 0.5 1</specular>
+            <emissive>0.0 0.6 0.0 1</emissive>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ── Pipe network between tanks ── -->
+    <model name="pipe_main">
+      <static>true</static>
+      <pose>1 9 0.4 0 0 0</pose>
+      <link name="pipe">
+        <visual name="vis">
+          <geometry><cylinder><radius>0.18</radius><length>22</length></cylinder></geometry>
+          <material>
+            <ambient>0.50 0.52 0.55 1</ambient>
+            <diffuse>0.58 0.60 0.63 1</diffuse>
+            <specular>0.45 0.46 0.48 1</specular>
+            <pbr><metal><roughness>0.30</roughness><metalness>0.80</metalness></metal></pbr>
+          </material>
+        </visual>
+        <collision name="col"><geometry><cylinder><radius>0.18</radius><length>22</length></cylinder></geometry></collision>
+      </link>
+    </model>
+
+    <!-- ── Control building ── -->
+    <model name="control_room">
+      <static>true</static>
+      <pose>18 -12 2 0 0 0</pose>
+      <link name="structure">
+        <visual name="walls">
+          <geometry><box><size>8 6 4</size></box></geometry>
+          <material>
+            <ambient>0.60 0.57 0.52 1</ambient>
+            <diffuse>0.70 0.67 0.60 1</diffuse>
+            <specular>0.05 0.05 0.04 1</specular>
+            <pbr><metal><roughness>0.88</roughness><metalness>0.0</metalness></metal></pbr>
+          </material>
+        </visual>
+        <visual name="roof">
+          <pose>0 0 2.15 0 0 0</pose>
+          <geometry><box><size>8.3 6.3 0.3</size></box></geometry>
+          <material>
+            <ambient>0.32 0.30 0.28 1</ambient>
+            <diffuse>0.40 0.38 0.35 1</diffuse>
+            <specular>0.04 0.04 0.04 1</specular>
+          </material>
+        </visual>
+        <visual name="door">
+          <pose>4.01 0 -0.5 0 0 0</pose>
+          <geometry><box><size>0.05 1.2 2.4</size></box></geometry>
+          <material>
+            <ambient>0.20 0.20 0.22 1</ambient>
+            <diffuse>0.25 0.25 0.28 1</diffuse>
+            <specular>0.3 0.3 0.3 1</specular>
+            <pbr><metal><roughness>0.3</roughness><metalness>0.7</metalness></metal></pbr>
+          </material>
+        </visual>
+        <collision name="col"><geometry><box><size>8 6 4</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <!-- ── Drone — detailed quadrotor frame ── -->
+    <model name="drone">
+      <static>true</static>
+      <pose>0 0 18 0 0 0.785</pose>
+      <link name="base_link">
+        <!-- Central body -->
+        <visual name="body_vis">
+          <geometry><box><size>0.35 0.35 0.10</size></box></geometry>
+          <material>
+            <ambient>0.08 0.08 0.10 1</ambient>
+            <diffuse>0.12 0.12 0.15 1</diffuse>
+            <specular>0.4 0.4 0.45 1</specular>
+            <pbr><metal><roughness>0.25</roughness><metalness>0.8</metalness></metal></pbr>
+          </material>
+        </visual>
+        <!-- Arms -->
+        <visual name="arm_ne">
+          <pose>0.18 0.18 0 0 0 0.785</pose>
+          <geometry><box><size>0.52 0.045 0.035</size></box></geometry>
+          <material><ambient>0.12 0.12 0.14 1</ambient><diffuse>0.16 0.16 0.18 1</diffuse><specular>0.3 0.3 0.3 1</specular></material>
+        </visual>
+        <visual name="arm_nw">
+          <pose>-0.18 0.18 0 0 0 -0.785</pose>
+          <geometry><box><size>0.52 0.045 0.035</size></box></geometry>
+          <material><ambient>0.12 0.12 0.14 1</ambient><diffuse>0.16 0.16 0.18 1</diffuse><specular>0.3 0.3 0.3 1</specular></material>
+        </visual>
+        <visual name="arm_sw">
+          <pose>-0.18 -0.18 0 0 0 0.785</pose>
+          <geometry><box><size>0.52 0.045 0.035</size></box></geometry>
+          <material><ambient>0.12 0.12 0.14 1</ambient><diffuse>0.16 0.16 0.18 1</diffuse><specular>0.3 0.3 0.3 1</specular></material>
+        </visual>
+        <visual name="arm_se">
+          <pose>0.18 -0.18 0 0 0 -0.785</pose>
+          <geometry><box><size>0.52 0.045 0.035</size></box></geometry>
+          <material><ambient>0.12 0.12 0.14 1</ambient><diffuse>0.16 0.16 0.18 1</diffuse><specular>0.3 0.3 0.3 1</specular></material>
+        </visual>
+        <!-- Motor hubs -->
+        <visual name="motor_ne"><pose>0.30 0.30 0.02 0 0 0</pose><geometry><cylinder><radius>0.04</radius><length>0.06</length></cylinder></geometry><material><ambient>0.6 0.6 0.0 1</ambient><diffuse>0.8 0.8 0.0 1</diffuse><specular>0.3 0.3 0.0 1</specular></material></visual>
+        <visual name="motor_nw"><pose>-0.30 0.30 0.02 0 0 0</pose><geometry><cylinder><radius>0.04</radius><length>0.06</length></cylinder></geometry><material><ambient>0.6 0.6 0.0 1</ambient><diffuse>0.8 0.8 0.0 1</diffuse><specular>0.3 0.3 0.0 1</specular></material></visual>
+        <visual name="motor_sw"><pose>-0.30 -0.30 0.02 0 0 0</pose><geometry><cylinder><radius>0.04</radius><length>0.06</length></cylinder></geometry><material><ambient>0.6 0.6 0.0 1</ambient><diffuse>0.8 0.8 0.0 1</diffuse><specular>0.3 0.3 0.0 1</specular></material></visual>
+        <visual name="motor_se"><pose>0.30 -0.30 0.02 0 0 0</pose><geometry><cylinder><radius>0.04</radius><length>0.06</length></cylinder></geometry><material><ambient>0.6 0.6 0.0 1</ambient><diffuse>0.8 0.8 0.0 1</diffuse><specular>0.3 0.3 0.0 1</specular></material></visual>
+        <!-- Downward gimbal camera -->
+        <visual name="gimbal">
+          <pose>0 0 -0.07 0 0 0</pose>
+          <geometry><sphere><radius>0.045</radius></sphere></geometry>
+          <material>
+            <ambient>0.05 0.05 0.05 1</ambient>
+            <diffuse>0.07 0.07 0.07 1</diffuse>
+            <specular>0.5 0.5 0.5 1</specular>
+            <pbr><metal><roughness>0.12</roughness><metalness>0.0</metalness></metal></pbr>
+          </material>
+        </visual>
+        <collision name="body_col"><geometry><box><size>0.35 0.35 0.10</size></box></geometry></collision>
+        <!-- Drone downward camera sensor -->
         <sensor name="drone_cam" type="camera">
-          <pose>0 0 -0.08 0 1.5707 0</pose>
+          <pose>0 0 -0.12 0 1.5707 0</pose>
           <update_rate>5</update_rate>
           <camera>
             <horizontal_fov>1.0472</horizontal_fov>
             <image><width>1280</width><height>720</height><format>R8G8B8</format></image>
             <clip><near>0.5</near><far>200</far></clip>
+            <noise><type>gaussian</type><mean>0</mean><stddev>0.002</stddev></noise>
           </camera>
         </sensor>
       </link>

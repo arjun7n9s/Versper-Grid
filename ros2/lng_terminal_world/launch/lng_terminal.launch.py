@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, SetEnvironmentVariable
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
@@ -12,9 +12,28 @@ def generate_launch_description():
     pkg_dir = Path(get_package_share_directory("lng_terminal_world"))
     world_file = str(pkg_dir / "worlds" / "lng_terminal.sdf")
 
-    # Gazebo Sim (Ignition) server + GUI
+    # Force Ogre2 (OGRE-Next) for PBR materials, shadows, particles, sky
+    set_render_engine = SetEnvironmentVariable(
+        name="GZ_SIM_RENDER_ENGINE_SERVER_API_BACKEND",
+        value="ogre2",
+    )
+    set_render_engine_gui = SetEnvironmentVariable(
+        name="GZ_SIM_RENDER_ENGINE_GUI_API_BACKEND",
+        value="ogre2",
+    )
+    # Allow software (llvmpipe) fallback when no discrete GPU is present
+    set_mesa_gl = SetEnvironmentVariable(
+        name="MESA_GL_VERSION_OVERRIDE",
+        value="4.5",
+    )
+    set_libgl = SetEnvironmentVariable(
+        name="LIBGL_ALWAYS_SOFTWARE",
+        value="0",
+    )
+
+    # Gazebo Sim (Ignition) server + GUI — verbose for render diagnostics
     gz_sim = ExecuteProcess(
-        cmd=["gz", "sim", "-r", "-v4", world_file],
+        cmd=["gz", "sim", "-r", "-v4", "--render-engine", "ogre2", world_file],
         output="screen",
     )
 
@@ -43,6 +62,10 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        set_render_engine,
+        set_render_engine_gui,
+        set_mesa_gl,
+        set_libgl,
         gz_sim,
         bridge_cctv,
         bridge_drone,
