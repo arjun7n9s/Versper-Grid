@@ -1,0 +1,85 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="snowfall">
+    <static>true</static>
+    <link name="snow_link">
+      <!-- Pitch +90° rotates +X emission to -Z (downward/falling) -->
+      <pose>0 0 0 0 1.5707 0</pose>
+
+      <!-- SMALL snowflakes: fast, dense -->
+      <particle_emitter name="snow_small" type="box">
+        <emitting>true</emitting>
+        <size>500 500 0</size>
+        <particle_size>0.06 0.06 0.06</particle_size>
+        <lifetime>50</lifetime>
+        <min_velocity>1.8</min_velocity>
+        <max_velocity>3.5</max_velocity>
+        <scale_rate>0.01</scale_rate>
+        <rate>40</rate>
+        <color_start>1.0 1.0 1.0 0.6</color_start>
+        <color_end>0.95 0.95 0.98 0.0</color_end>
+        <particle_scatter_ratio>0.5</particle_scatter_ratio>
+        <material>
+          <diffuse>1.0 1.0 1.0</diffuse>
+          <specular>1.0 1.0 1.0</specular>
+          <pbr>
+            <metal>
+              <albedo_map>materials/textures/smoke_puff.png</albedo_map>
+            </metal>
+          </pbr>
+        </material>
+        <color_range_image>materials/textures/smoke_colors.png</color_range_image>
+      </particle_emitter>
+
+      <!-- MEDIUM snowflakes: moderate speed -->
+      <particle_emitter name="snow_medium" type="box">
+        <emitting>true</emitting>
+        <size>500 500 0</size>
+        <particle_size>0.15 0.15 0.15</particle_size>
+        <lifetime>55</lifetime>
+        <min_velocity>1.2</min_velocity>
+        <max_velocity>2.8</max_velocity>
+        <scale_rate>0.02</scale_rate>
+        <rate>25</rate>
+        <color_start>1.0 1.0 1.0 0.7</color_start>
+        <color_end>0.95 0.95 0.98 0.0</color_end>
+        <particle_scatter_ratio>0.7</particle_scatter_ratio>
+        <material>
+          <diffuse>1.0 1.0 1.0</diffuse>
+          <specular>1.0 1.0 1.0</specular>
+          <pbr>
+            <metal>
+              <albedo_map>materials/textures/smoke_puff.png</albedo_map>
+            </metal>
+          </pbr>
+        </material>
+        <color_range_image>materials/textures/smoke_colors.png</color_range_image>
+      </particle_emitter>
+
+      <!-- LARGE snowflakes: slow, drifty, fewer -->
+      <particle_emitter name="snow_large" type="box">
+        <emitting>true</emitting>
+        <size>500 500 0</size>
+        <particle_size>0.28 0.28 0.28</particle_size>
+        <lifetime>60</lifetime>
+        <min_velocity>0.8</min_velocity>
+        <max_velocity>2.0</max_velocity>
+        <scale_rate>0.03</scale_rate>
+        <rate>10</rate>
+        <color_start>1.0 1.0 1.0 0.8</color_start>
+        <color_end>0.95 0.95 0.98 0.0</color_end>
+        <particle_scatter_ratio>0.9</particle_scatter_ratio>
+        <material>
+          <diffuse>1.0 1.0 1.0</diffuse>
+          <specular>1.0 1.0 1.0</specular>
+          <pbr>
+            <metal>
+              <albedo_map>materials/textures/smoke_puff.png</albedo_map>
+            </metal>
+          </pbr>
+        </material>
+        <color_range_image>materials/textures/smoke_colors.png</color_range_image>
+      </particle_emitter>
+    </link>
+  </model>
+</sdf>

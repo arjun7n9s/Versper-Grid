@@ -1,0 +1,32 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="wind_streaks">
+    <static>true</static>
+    <link name="wind_link">
+      <!-- Horizontal: wind blowing along ground, slight yaw for diagonal drift -->
+      <particle_emitter name="wind_particles" type="box">
+        <emitting>true</emitting>
+        <size>200 200 0</size>
+        <particle_size>0.1 0.1 0.02</particle_size>
+        <lifetime>12</lifetime>
+        <min_velocity>1.5</min_velocity>
+        <max_velocity>3.5</max_velocity>
+        <scale_rate>0.1</scale_rate>
+        <rate>15</rate>
+        <color_start>0.55 0.52 0.45 0.06</color_start>
+        <color_end>0.65 0.62 0.55 0.0</color_end>
+        <particle_scatter_ratio>0.5</particle_scatter_ratio>
+        <material>
+          <diffuse>0.5 0.48 0.42</diffuse>
+          <specular>0.1 0.1 0.1</specular>
+          <pbr>
+            <metal>
+              <albedo_map>materials/textures/smoke_puff.png</albedo_map>
+            </metal>
+          </pbr>
+        </material>
+        <color_range_image>materials/textures/smoke_colors.png</color_range_image>
+      </particle_emitter>
+    </link>
+  </model>
+</sdf>

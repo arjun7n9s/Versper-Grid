@@ -18,8 +18,8 @@
 <sdf version="1.9">
   <world name="lng_terminal">
 
-    <physics type="ignored">
-      <max_step_size>0.001</max_step_size>
+    <physics name="dart_physics" type="dart">
+      <max_step_size>0.002</max_step_size>
       <real_time_factor>1.0</real_time_factor>
     </physics>
 
@@ -27,6 +27,7 @@
     <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
     <plugin filename="gz-sim-user-commands-system"    name="gz::sim::systems::UserCommands"/>
     <plugin filename="gz-sim-sensors-system"          name="gz::sim::systems::Sensors"/>
+    <plugin filename="gz-sim-particle-emitter-system"  name="gz::sim::systems::ParticleEmitter"/>
     <!-- In-sim drone animator (C++ system plugin, 1 kHz direct ECM writes) -->
     <plugin filename="DroneAnimator" name="vesper::DroneAnimator"/>
 
@@ -174,16 +175,24 @@
         </visual>
       </link>
       <link name="cam_sensor_link">
-        <pose>0 -2.0 9.5 0 -0.30 1.5707</pose>
+        <pose>0 -2.0 9.5 0 -0.05 1.14</pose>
         <inertial><mass>0.001</mass><inertia><ixx>0.0001</ixx><iyy>0.0001</iyy><izz>0.0001</izz></inertia></inertial>
         <sensor name="cctv_gate_cam" type="camera">
           <pose>0 0 0 0 0 0</pose>
           <update_rate>5</update_rate>
           <camera>
             <horizontal_fov>1.3962634</horizontal_fov>
-            <image><width>1280</width><height>720</height><format>R8G8B8</format></image>
+            <image><width>1920</width><height>1080</height><format>R8G8B8</format></image>
             <clip><near>0.1</near><far>400</far></clip>
             <noise><type>gaussian</type><mean>0</mean><stddev>0.003</stddev></noise>
+            <lens>
+              <type>custom</type>
+              <custom_function>
+                <c1>1.05</c1><c2>-0.1</c2><f>1.0</f>
+                <fun>tan</fun>
+              </custom_function>
+              <scale_to_hfov>true</scale_to_hfov>
+            </lens>
           </camera>
         </sensor>
       </link>
@@ -247,17 +256,25 @@
         </visual>
       </link>
       <link name="cam_sensor_link">
-        <!-- Sensor origin at arm tip, pitched down to watch B-4 -->
-        <pose>0 -2.4 11.5 0 -0.40 1.5707</pose>
+        <!-- Sensor origin at arm tip, pitched slightly up to watch the plume -->
+        <pose>0 -2.4 11.5 0 -0.05 0.63</pose>
         <inertial><mass>0.001</mass><inertia><ixx>0.0001</ixx><iyy>0.0001</iyy><izz>0.0001</izz></inertia></inertial>
         <sensor name="cctv_south_cam" type="camera">
           <pose>0 0 0 0 0 0</pose>
           <update_rate>5</update_rate>
           <camera>
             <horizontal_fov>1.2217</horizontal_fov>
-            <image><width>1280</width><height>720</height><format>R8G8B8</format></image>
+            <image><width>1920</width><height>1080</height><format>R8G8B8</format></image>
             <clip><near>0.1</near><far>400</far></clip>
             <noise><type>gaussian</type><mean>0</mean><stddev>0.003</stddev></noise>
+            <lens>
+              <type>custom</type>
+              <custom_function>
+                <c1>1.05</c1><c2>-0.1</c2><f>1.0</f>
+                <fun>tan</fun>
+              </custom_function>
+              <scale_to_hfov>true</scale_to_hfov>
+            </lens>
           </camera>
         </sensor>
       </link>
@@ -272,7 +289,7 @@
     <!-- ═══ Drones · CCTV cameras · Flare stacks                    ═══ -->
     <!-- ═══════════════════════════════════════════════════════════════ -->
 
-    <model name="drone_d1"><static>false</static><pose>72 -50 18 0 0 -2.4</pose>
+    <model name="drone_d1"><static>false</static><pose>40 -40 25 0 0 -2.3</pose>
       <link name="base_link">
         <gravity>false</gravity>
         <inertial><mass>1.0</mass><inertia><ixx>0.05</ixx><iyy>0.05</iyy><izz>0.05</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
@@ -325,12 +342,38 @@
           <material><ambient>1.0 0.1 0.1 0.3</ambient><diffuse>1.0 0.15 0.15 0.3</diffuse>
           <emissive>0.8 0.0 0.0 1</emissive></material></visual>
         <collision name="c"><geometry><box><size>0.55 0.55 0.16</size></box></geometry></collision>
+        
+        <!-- Standard Camera (All-around view) -->
         <sensor name="drone_cam" type="camera">
-          <pose>0 0 -0.18 0 1.5707 0</pose>
+          <pose>0 0 -0.18 0 0.25 1.5707</pose>
           <update_rate>5</update_rate>
           <camera>
             <horizontal_fov>1.0472</horizontal_fov>
-            <image><width>1280</width><height>720</height><format>R8G8B8</format></image>
+            <image><width>1920</width><height>1080</height><format>R8G8B8</format></image>
+            <clip><near>0.5</near><far>400</far></clip>
+            <noise><type>gaussian</type><mean>0</mean><stddev>0.002</stddev></noise>
+          </camera>
+        </sensor>
+
+        <!-- Wide Camera (Captures the massive drifting cloud) -->
+        <sensor name="drone_cam_wide" type="camera">
+          <pose>0 0 -0.18 0 0.15 1.5707</pose>
+          <update_rate>5</update_rate>
+          <camera>
+            <horizontal_fov>1.8</horizontal_fov>
+            <image><width>1920</width><height>1080</height><format>R8G8B8</format></image>
+            <clip><near>0.5</near><far>400</far></clip>
+            <noise><type>gaussian</type><mean>0</mean><stddev>0.002</stddev></noise>
+          </camera>
+        </sensor>
+
+        <!-- Tracking Camera (Zoomed in on the flange base) -->
+        <sensor name="drone_cam_track" type="camera">
+          <pose>0 0 -0.18 0 0.45 1.5707</pose>
+          <update_rate>5</update_rate>
+          <camera>
+            <horizontal_fov>0.5</horizontal_fov>
+            <image><width>1920</width><height>1080</height><format>R8G8B8</format></image>
             <clip><near>0.5</near><far>400</far></clip>
             <noise><type>gaussian</type><mean>0</mean><stddev>0.002</stddev></noise>
           </camera>
@@ -595,64 +638,29 @@
       <visual name="ring"><pose>0 0 0.5 0 0 0</pose><geometry><cylinder><radius>9</radius><length>1.0</length></cylinder></geometry>
         <material><ambient>0.18 0.14 0.10 1</ambient><diffuse>0.24 0.18 0.14 1</diffuse><specular>0.05 0.04 0.03 1</specular><pbr><metal><roughness>0.85</roughness><metalness>0.42</metalness></metal></pbr></material></visual>
       <visual name="rust1"><pose>7.95 0 9 0 0 0</pose><geometry><box><size>0.08 1.0 16</size></box></geometry>
-        <material><ambient>0.58 0.22 0.04 1</ambient><diffuse>0.66 0.26 0.05 1</diffuse></material></visual>
+        <material><ambient>0.58 0.22 0.04 1</ambient><diffuse>0.66 0.26 0.05 1</diffuse><pbr><metal><roughness>0.95</roughness><metalness>0.10</metalness></metal></pbr></material></visual>
       <visual name="rust2"><pose>-4 6.85 12 0 0 0</pose><geometry><box><size>0.08 0.7 12</size></box></geometry>
-        <material><ambient>0.55 0.20 0.04 1</ambient><diffuse>0.62 0.23 0.05 1</diffuse></material></visual>
+        <material><ambient>0.55 0.20 0.04 1</ambient><diffuse>0.62 0.23 0.05 1</diffuse><pbr><metal><roughness>0.95</roughness><metalness>0.10</metalness></metal></pbr></material></visual>
       <visual name="flange"><pose>8.1 0 4.5 0 1.5707 0</pose><geometry><cylinder><radius>0.4</radius><length>0.7</length></cylinder></geometry>
-        <material><ambient>0.85 0.38 0.08 1</ambient><diffuse>0.95 0.45 0.10 1</diffuse><emissive>0.40 0.14 0.0 1</emissive></material></visual>
+        <material><ambient>1.0 0.5 0.1 1</ambient><diffuse>1.0 0.6 0.2 1</diffuse><emissive>0.9 0.4 0.0 1</emissive><pbr><metal><roughness>0.2</roughness><metalness>0.8</metalness></metal></pbr></material></visual>
     </link></model>
 
-    <!-- ═══ B-4 GAS PLUME: opaque core, semi-transparent foggy outer (no z-fighting) ═══ -->
-    <!-- Core column: smaller than tank radius (8m), opaque inner → translucent outer -->
-    <model name="plume_lvl1"><static>true</static><pose>68 -64 2.5 0 0 0</pose><link name="l"><visual name="v">
-      <geometry><sphere><radius>1.4</radius></sphere></geometry>
-      <material><ambient>0.62 0.66 0.62 1</ambient><diffuse>0.70 0.74 0.70 1</diffuse>
-      <emissive>0.18 0.20 0.18 1</emissive></material></visual></link></model>
-    <model name="plume_lvl2"><static>true</static><pose>68.4 -63.5 5 0 0 0</pose><link name="l"><visual name="v">
-      <geometry><sphere><radius>1.7</radius></sphere></geometry>
-      <material><ambient>0.65 0.68 0.65 1</ambient><diffuse>0.73 0.76 0.73 1</diffuse>
-      <emissive>0.20 0.22 0.20 1</emissive></material></visual></link></model>
-    <model name="plume_lvl3"><static>true</static><pose>69.0 -62.8 8 0 0 0</pose><link name="l"><visual name="v">
-      <geometry><sphere><radius>1.95</radius></sphere></geometry>
-      <transparency>0.15</transparency>
-      <material><ambient>0.68 0.71 0.68 0.85</ambient><diffuse>0.76 0.79 0.76 0.85</diffuse>
-      <emissive>0.20 0.22 0.20 1</emissive></material></visual></link></model>
-    <model name="plume_lvl4"><static>true</static><pose>69.8 -61.8 11.5 0 0 0</pose><link name="l"><visual name="v">
-      <geometry><sphere><radius>2.2</radius></sphere></geometry>
-      <transparency>0.35</transparency>
-      <material><ambient>0.70 0.73 0.70 0.65</ambient><diffuse>0.78 0.81 0.78 0.65</diffuse>
-      <emissive>0.18 0.20 0.18 1</emissive></material></visual></link></model>
-    <model name="plume_lvl5"><static>true</static><pose>70.9 -60.4 15.5 0 0 0</pose><link name="l"><visual name="v">
-      <geometry><sphere><radius>2.5</radius></sphere></geometry>
-      <transparency>0.55</transparency>
-      <material><ambient>0.72 0.75 0.72 0.45</ambient><diffuse>0.80 0.83 0.80 0.45</diffuse>
-      <emissive>0.16 0.18 0.16 1</emissive></material></visual></link></model>
-    <model name="plume_lvl6"><static>true</static><pose>72.2 -58.6 19.5 0 0 0</pose><link name="l"><visual name="v">
-      <geometry><sphere><radius>2.8</radius></sphere></geometry>
-      <transparency>0.72</transparency>
-      <material><ambient>0.74 0.76 0.74 0.28</ambient><diffuse>0.82 0.84 0.82 0.28</diffuse>
-      <emissive>0.14 0.16 0.14 1</emissive></material></visual></link></model>
-    <model name="plume_lvl7"><static>true</static><pose>73.8 -56.6 24 0 0 0</pose><link name="l"><visual name="v">
-      <geometry><sphere><radius>3.0</radius></sphere></geometry>
-      <transparency>0.85</transparency>
-      <material><ambient>0.75 0.77 0.75 0.15</ambient><diffuse>0.83 0.85 0.83 0.15</diffuse>
-      <emissive>0.12 0.14 0.12 1</emissive></material></visual></link></model>
-    <!-- Ground haze (low, foggy spread) -->
-    <model name="haze_a"><static>true</static><pose>64.5 -64 0.6 0 0 0</pose><link name="l"><visual name="v">
-      <geometry><sphere><radius>1.4</radius></sphere></geometry>
-      <transparency>0.55</transparency>
-      <material><ambient>0.62 0.66 0.62 0.45</ambient><diffuse>0.70 0.74 0.70 0.45</diffuse>
-      <emissive>0.14 0.16 0.14 1</emissive></material></visual></link></model>
-    <model name="haze_b"><static>true</static><pose>70.5 -67 0.5 0 0 0</pose><link name="l"><visual name="v">
-      <geometry><sphere><radius>1.2</radius></sphere></geometry>
-      <transparency>0.65</transparency>
-      <material><ambient>0.62 0.66 0.62 0.35</ambient><diffuse>0.70 0.74 0.70 0.35</diffuse>
-      <emissive>0.14 0.16 0.14 1</emissive></material></visual></link></model>
-    <model name="haze_c"><static>true</static><pose>67 -68.5 0.4 0 0 0</pose><link name="l"><visual name="v">
-      <geometry><sphere><radius>1.0</radius></sphere></geometry>
-      <transparency>0.7</transparency>
-      <material><ambient>0.62 0.66 0.62 0.30</ambient><diffuse>0.70 0.74 0.70 0.30</diffuse>
-      <emissive>0.14 0.16 0.14 1</emissive></material></visual></link></model>
+    <!-- ═══ B-4 GAS PLUME: Particle Emitter Models ═══ -->
+    <!-- Rising column: offset 2m from tank surface to prevent clipping -->
+    <include>
+      <uri>model://gas_plume</uri>
+      <name>gas_plume_emitter</name>
+      <pose>70 -65 4.5 0 0 0</pose>
+    </include>
+    <!-- Removed gas_haze_emitter to prevent alpha depth-sorting clipping with the main plume -->
+
+    <!-- ═══ ATMOSPHERIC LIVELINESS: SNOWFALL ═══ -->
+    <!-- Snowfall from 80m altitude, covers entire facility -->
+    <include>
+      <uri>model://snowfall</uri>
+      <name>snowfall_main</name>
+      <pose>0 0 80 0 0 0</pose>
+    </include>
 
     <!-- Pipe rack across Sector 1 -->
     <model name="rk1"><static>true</static><pose>-90 0 4.5 0 0 0</pose><link name="l">
@@ -742,6 +750,34 @@
         <material><ambient>0.52 0.52 0.52 1</ambient><diffuse>0.62 0.62 0.62 1</diffuse>
         <pbr><metal><roughness>0.58</roughness><metalness>0.52</metalness></metal></pbr></material></visual></link></model>
 
+    <!-- Sector 1 Dense Infrastructure: Factories & Warehouses -->
+    <model name="s1_processing_plant"><static>true</static><pose>140 -80 10 0 0 0</pose><link name="l">
+      <collision name="c"><geometry><box><size>40 50 20</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>40 50 20</size></box></geometry>
+        <material><ambient>0.35 0.35 0.38 1</ambient><diffuse>0.45 0.45 0.48 1</diffuse>
+        <pbr><metal><roughness>0.6</roughness><metalness>0.3</metalness></metal></pbr></material></visual>
+      <visual name="chimney1"><pose>10 15 15 0 0 0</pose><geometry><cylinder><radius>1.5</radius><length>10</length></cylinder></geometry>
+        <material><ambient>0.2 0.2 0.2 1</ambient><diffuse>0.3 0.3 0.3 1</diffuse></material></visual>
+      <visual name="chimney2"><pose>10 5 15 0 0 0</pose><geometry><cylinder><radius>1.5</radius><length>10</length></cylinder></geometry>
+        <material><ambient>0.2 0.2 0.2 1</ambient><diffuse>0.3 0.3 0.3 1</diffuse></material></visual>
+    </link></model>
+
+    <model name="s1_compressor_station"><static>true</static><pose>40 -150 6 0 0 0</pose><link name="l">
+      <collision name="c"><geometry><box><size>35 25 12</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>35 25 12</size></box></geometry>
+        <material><ambient>0.42 0.45 0.42 1</ambient><diffuse>0.52 0.55 0.52 1</diffuse>
+        <pbr><metal><roughness>0.7</roughness><metalness>0.1</metalness></metal></pbr></material></visual>
+      <visual name="roof_units"><pose>0 0 7 0 0 0</pose><geometry><box><size>25 15 2</size></box></geometry>
+        <material><ambient>0.25 0.25 0.25 1</ambient><diffuse>0.35 0.35 0.35 1</diffuse></material></visual>
+    </link></model>
+
+    <model name="s1_storage_warehouse"><static>true</static><pose>10 -150 8 0 0 0</pose><link name="l">
+      <collision name="c"><geometry><box><size>20 45 16</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>20 45 16</size></box></geometry>
+        <material><ambient>0.5 0.48 0.45 1</ambient><diffuse>0.6 0.58 0.55 1</diffuse>
+        <pbr><metal><roughness>0.8</roughness><metalness>0.0</metalness></metal></pbr></material></visual>
+    </link></model>
+
     <!-- Muster point -->
     <model name="muster_shelter"><static>true</static><pose>-115 -115 2.2 0 0 0</pose><link name="l">
       <collision name="c"><geometry><box><size>14 9 4.4</size></box></geometry></collision>
@@ -764,7 +800,21 @@
         <pbr><metal><roughness>0.5</roughness><metalness>0.1</metalness></metal></pbr></material></visual>
       <visual name="led"><pose>0 0.135 0.12 0 0 0</pose><geometry><sphere><radius>0.04</radius></sphere></geometry>
         <material><ambient>1.0 0.04 0.04 1</ambient><diffuse>1.0 0.04 0.04 1</diffuse>
-        <emissive>0.90 0.0 0.0 1</emissive></material></visual></link></model>
+        <emissive>0.90 0.0 0.0 1</emissive></material></visual>
+      <sensor name="gas_sensor_0" type="gpu_lidar">
+        <pose>0 0 0.2 0 0 0</pose>
+        <update_rate>10</update_rate>
+        <topic>/gas_sensor_0/scan</topic>
+        <lidar>
+          <scan>
+            <horizontal><samples>360</samples><resolution>1</resolution><min_angle>-3.14159</min_angle><max_angle>3.14159</max_angle></horizontal>
+            <vertical><samples>1</samples><resolution>1</resolution><min_angle>0</min_angle><max_angle>0</max_angle></vertical>
+          </scan>
+          <range><min>0.1</min><max>30.0</max><resolution>0.01</resolution></range>
+          <noise><type>gaussian</type><mean>0</mean><stddev>0.01</stddev></noise>
+        </lidar>
+      </sensor>
+    </link></model>
 
     <model name="s2_fence_s"><static>true</static><pose>450 -180 2 0 0 0</pose><link name="l">
       <collision name="c"><geometry><box><size>360 0.5 4</size></box></geometry></collision>
@@ -906,247 +956,119 @@
     <light type="point" name="s4_light"><cast_shadows>false</cast_shadows><pose>580 -440 40 0 0 0</pose>
       <diffuse>0.75 0.55 0.22 1</diffuse><specular>0.1 0.08 0.02 1</specular>
       <attenuation><range>400</range><constant>0.3</constant><linear>0.008</linear><quadratic>0.00002</quadratic></attenuation></light>
-    <!-- ═══ COASTAL MOUNTAIN RANGE (impassable, 800m radius) ═══ -->
-    <model name="mt_0"><static>true</static><pose>895.9140197686826 0.0 41.250537761133344 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>102.00234546952954 97.85685905190581 82.50107552226669</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>102.00234546952954 97.85685905190581 82.50107552226669</size></box></geometry>
-        <material><ambient>0.1387694455648567 0.15418827284984077 0.16189768649233283 1</ambient><diffuse>0.2775388911297134 0.30837654569968154 0.32379537298466565 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_1"><static>true</static><pose>887.8090376607869 156.54468705641443 84.60897838524227 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>86.9551066103533 113.75374557482164 169.21795677048453</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>86.9551066103533 113.75374557482164 169.21795677048453</size></box></geometry>
-        <material><ambient>0.10060904984965581 0.11178783316628423 0.11737722482459845 1</ambient><diffuse>0.20121809969931162 0.22357566633256845 0.2347544496491969 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_2"><static>true</static><pose>782.571970360705 284.83290338234934 65.26776440516812 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>82.1228775747091 95.90701205493188 130.53552881033625</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>82.1228775747091 95.90701205493188 130.53552881033625</size></box></geometry>
-        <material><ambient>0.13409375964009426 0.1489930662667714 0.15644271958010997 1</ambient><diffuse>0.2681875192801885 0.2979861325335428 0.31288543916021994 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_3"><static>true</static><pose>763.6102978942946 440.8706110452412 51.02203110203483 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>127.1412547100727 144.75443653422613 102.04406220406966</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>127.1412547100727 144.75443653422613 102.04406220406966</size></box></geometry>
-        <material><ambient>0.0993509330226153 0.11038992558068367 0.11590942185971785 1</ambient><diffuse>0.1987018660452306 0.22077985116136734 0.2318188437194357 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_4"><static>true</static><pose>705.4295584989046 591.9256823579823 74.90696974941135 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>107.22004132143935 92.43835998494252 149.8139394988227</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>107.22004132143935 92.43835998494252 149.8139394988227</size></box></geometry>
-        <material><ambient>0.1506895058991662 0.16743278433240688 0.17580442354902723 1</ambient><diffuse>0.3013790117983324 0.33486556866481376 0.35160884709805446 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_5"><static>true</static><pose>546.6839082122025 651.5125116253356 44.637292169007395 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>87.73731014667712 147.79954930779678 89.27458433801479</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>87.73731014667712 147.79954930779678 89.27458433801479</size></box></geometry>
-        <material><ambient>0.13160120569381212 0.14622356188201346 0.15353473997611414 1</ambient><diffuse>0.26320241138762424 0.29244712376402693 0.3070694799522283 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_6"><static>true</static><pose>460.5346204955786 797.6693613427931 76.4865893346909 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>122.89824731637606 157.84926111834966 152.9731786693818</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>122.89824731637606 157.84926111834966 152.9731786693818</size></box></geometry>
-        <material><ambient>0.11944085636925109 0.1327120626325012 0.13934766576412627 1</ambient><diffuse>0.23888171273850217 0.2654241252650024 0.27869533152825254 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_7"><static>true</static><pose>301.93746703498437 829.5663727659436 81.47023321264975 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>129.4815801891397 148.93655202486218 162.9404664252995</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>129.4815801891397 148.93655202486218 162.9404664252995</size></box></geometry>
-        <material><ambient>0.13017701584386518 0.14464112871540574 0.15187318515117604 1</ambient><diffuse>0.26035403168773036 0.2892822574308115 0.3037463703023521 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_8"><static>true</static><pose>157.270684442669 891.9263734385421 42.29121918278311 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>98.23186205212374 103.15103708816858 84.58243836556622</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>98.23186205212374 103.15103708816858 84.58243836556622</size></box></geometry>
-        <material><ambient>0.10330876675387589 0.11478751861541765 0.12052689454618853 1</ambient><diffuse>0.20661753350775178 0.2295750372308353 0.24105378909237707 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_9"><static>true</static><pose>5.112402156978946e-14 834.9186329541545 45.05007147048646 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>102.23788824880737 130.85475554115203 90.10014294097292</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>102.23788824880737 130.85475554115203 90.10014294097292</size></box></geometry>
-        <material><ambient>0.11870093766438457 0.13188993073820507 0.13848442727511534 1</ambient><diffuse>0.23740187532876914 0.26377986147641014 0.2769688545502307 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_10"><static>true</static><pose>-148.56072968556853 842.5297653749059 50.47535153857439 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>101.35822576392907 154.93236701699954 100.95070307714877</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>101.35822576392907 154.93236701699954 100.95070307714877</size></box></geometry>
-        <material><ambient>0.13399391080331607 0.14888212311479562 0.1563262292705354 1</ambient><diffuse>0.26798782160663215 0.29776424622959125 0.3126524585410708 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_11"><static>true</static><pose>-304.86637573988475 837.6134832963019 48.556932409904846 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>138.33014383602793 93.07219950095427 97.11386481980969</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>138.33014383602793 93.07219950095427 97.11386481980969</size></box></geometry>
-        <material><ambient>0.11949059385491298 0.13276732650545886 0.13940569283073181 1</ambient><diffuse>0.23898118770982596 0.2655346530109177 0.27881138566146363 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_12"><static>true</static><pose>-474.2142512977444 821.3631769209292 71.99998799270465 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>124.5559795019717 134.76914007918998 143.9999759854093</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>124.5559795019717 134.76914007918998 143.9999759854093</size></box></geometry>
-        <material><ambient>0.14451400369024972 0.1605711152113886 0.16859967097195802 1</ambient><diffuse>0.28902800738049944 0.3211422304227772 0.33719934194391604 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_13"><static>true</static><pose>-589.050556988198 702.0031175103053 51.45240359820522 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>82.56801951232302 105.23624384472654 102.90480719641045</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>82.56801951232302 105.23624384472654 102.90480719641045</size></box></geometry>
-        <material><ambient>0.11345800730268796 0.12606445255854218 0.1323676751864693 1</ambient><diffuse>0.22691601460537592 0.25212890511708436 0.2647353503729386 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_14"><static>true</static><pose>-637.0788897335942 534.5726614062901 87.14548571675272 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>150.10941011781352 105.17423046387823 174.29097143350543</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>150.10941011781352 105.17423046387823 174.29097143350543</size></box></geometry>
-        <material><ambient>0.13439368792592352 0.1493263199176928 0.15679263591357745 1</ambient><diffuse>0.26878737585184703 0.2986526398353856 0.3135852718271549 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_15"><static>true</static><pose>-744.2144145574609 429.67239257954975 85.72737948702718 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>116.70814820699191 101.1904133198442 171.45475897405436</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>116.70814820699191 101.1904133198442 171.45475897405436</size></box></geometry>
-        <material><ambient>0.11231788541547512 0.12479765046163901 0.13103753298472098 1</ambient><diffuse>0.22463577083095024 0.24959530092327803 0.26207506596944197 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_16"><static>true</static><pose>-830.8811206113467 302.4159961162767 53.13708042614677 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>126.76687921788324 151.82583068819815 106.27416085229353</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>126.76687921788324 151.82583068819815 106.27416085229353</size></box></geometry>
-        <material><ambient>0.12056762727758147 0.13396403030842385 0.14066223182384505 1</ambient><diffuse>0.24113525455516294 0.2679280606168477 0.2813244636476901 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_17"><static>true</static><pose>-820.2445200119588 144.63123965637305 89.87688032475552 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>120.76210349411716 87.27275297390351 179.75376064951104</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>120.76210349411716 87.27275297390351 179.75376064951104</size></box></geometry>
-        <material><ambient>0.10154428427293567 0.11282698252548408 0.11846833165175828 1</ambient><diffuse>0.20308856854587135 0.22565396505096816 0.23693666330351656 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_18"><static>true</static><pose>-816.4473695525988 9.998596577948664e-14 71.3723020851545 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>143.36634914903712 113.77279734397473 142.744604170309</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>143.36634914903712 113.77279734397473 142.744604170309</size></box></geometry>
-        <material><ambient>0.10243049613220569 0.11381166236911743 0.11950224548757331 1</ambient><diffuse>0.20486099226441137 0.22762332473823485 0.23900449097514662 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_19"><static>true</static><pose>-844.2194472173602 -148.85866618320654 89.80606901200484 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>122.32914760793096 157.68627020908946 179.61213802400968</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>122.32914760793096 157.68627020908946 179.61213802400968</size></box></geometry>
-        <material><ambient>0.14548210392066294 0.1616467821340699 0.1697291212407734 1</ambient><diffuse>0.2909642078413259 0.3232935642681398 0.3394582424815468 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_20"><static>true</static><pose>-753.3723913685391 -274.20512577609617 76.03609096800973 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>134.53682952212597 122.95762643270362 152.07218193601946</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>134.53682952212597 122.95762643270362 152.07218193601946</size></box></geometry>
-        <material><ambient>0.11340856025743733 0.12600951139715258 0.1323099869670102 1</ambient><diffuse>0.22681712051487465 0.25201902279430516 0.2646199739340204 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_21"><static>true</static><pose>-776.0837030913726 -448.0721348934857 45.57760867979382 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>114.7812200535284 116.29789650633651 91.15521735958764</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>114.7812200535284 116.29789650633651 91.15521735958764</size></box></geometry>
-        <material><ambient>0.15050606008613834 0.16722895565126483 0.1755904034338281 1</ambient><diffuse>0.3010121201722767 0.33445791130252966 0.3511808068676562 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_22"><static>true</static><pose>-713.4768961901024 -598.6782004466254 53.169452537554534 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>120.04688904402386 94.2921504424105 106.33890507510907</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>120.04688904402386 94.2921504424105 106.33890507510907</size></box></geometry>
-        <material><ambient>0.14828190332462032 0.16475767036068925 0.17299555387872373 1</ambient><diffuse>0.29656380664924065 0.3295153407213785 0.34599110775744746 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_23"><static>true</static><pose>-598.1638703531996 -712.8639414534827 54.92223957243164 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>131.1159595892804 128.71761691505378 109.84447914486329</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>131.1159595892804 128.71761691505378 109.84447914486329</size></box></geometry>
-        <material><ambient>0.10725332050168028 0.11917035611297809 0.125128873918627 1</ambient><diffuse>0.21450664100336056 0.23834071222595618 0.250257747837254 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_24"><static>true</static><pose>-457.18831000563677 -791.8733815563124 66.9689515059813 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>142.29011829044467 122.42829377561421 133.9379030119626</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>142.29011829044467 122.42829377561421 133.9379030119626</size></box></geometry>
-        <material><ambient>0.09903088239090896 0.11003431376767661 0.11553602945606045 1</ambient><diffuse>0.19806176478181792 0.22006862753535322 0.2310720589121209 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_25"><static>true</static><pose>-290.24629982202885 -797.4451548412787 40.973837119291616 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>154.32788930116936 150.29775022585474 81.94767423858323</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>154.32788930116936 150.29775022585474 81.94767423858323</size></box></geometry>
-        <material><ambient>0.14390993858550372 0.15989993176167078 0.16789492834975434 1</ambient><diffuse>0.28781987717100743 0.31979986352334155 0.33578985669950867 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_26"><static>true</static><pose>-146.92843225599609 -833.2725466383629 42.89625832470938 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>150.24076793632324 155.75595562383953 85.79251664941876</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>150.24076793632324 155.75595562383953 85.79251664941876</size></box></geometry>
-        <material><ambient>0.10362528641166546 0.11513920712407273 0.12089616748027637 1</ambient><diffuse>0.20725057282333093 0.23027841424814546 0.24179233496055275 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_27"><static>true</static><pose>-1.6034886586731105e-13 -872.8985694974921 43.46062592341918 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>140.84817322057853 141.26675434455902 86.92125184683836</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>140.84817322057853 141.26675434455902 86.92125184683836</size></box></geometry>
-        <material><ambient>0.1059331390829872 0.11770348786998577 0.12358866226348507 1</ambient><diffuse>0.2118662781659744 0.23540697573997155 0.24717732452697014 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_28"><static>true</static><pose>151.2983299586514 -858.055468033023 67.4901796747472 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>101.20453031520472 149.7946432868206 134.9803593494944</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>101.20453031520472 149.7946432868206 134.9803593494944</size></box></geometry>
-        <material><ambient>0.12184944877084791 0.13538827641205323 0.1421576902326559 1</ambient><diffuse>0.24369889754169582 0.27077655282410645 0.2843153804653118 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_29"><static>true</static><pose>284.48200254774827 -781.6078782411699 66.96480443897292 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>138.3944855271981 96.09208507117567 133.92960887794584</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>138.3944855271981 96.09208507117567 133.92960887794584</size></box></geometry>
-        <material><ambient>0.11583267973024834 0.1287029774780537 0.1351381263519564 1</ambient><diffuse>0.23166535946049668 0.2574059549561074 0.2702762527039128 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_30"><static>true</static><pose>474.6362017495672 -822.0940165417621 72.49390288197267 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>115.04800671316033 121.40606728284725 144.98780576394535</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>115.04800671316033 121.40606728284725 144.98780576394535</size></box></geometry>
-        <material><ambient>0.10553422657688635 0.11726025175209595 0.12312326433970075 1</ambient><diffuse>0.2110684531537727 0.2345205035041919 0.2462465286794015 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_31"><static>true</static><pose>535.8949873752482 -638.654776457681 56.90427810737277 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>127.06469747657866 98.40917860772616 113.80855621474554</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>127.06469747657866 98.40917860772616 113.80855621474554</size></box></geometry>
-        <material><ambient>0.11089173876038422 0.12321304306709358 0.12937369522044825 1</ambient><diffuse>0.22178347752076844 0.24642608613418715 0.2587473904408965 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_32"><static>true</static><pose>620.9931333507453 -521.0751091582342 71.55514786350494 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>98.31534270489234 152.43360104049023 143.11029572700988</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>98.31534270489234 152.43360104049023 143.11029572700988</size></box></geometry>
-        <material><ambient>0.14542031161370234 0.1615781240152248 0.16965703021598605 1</ambient><diffuse>0.29084062322740467 0.3231562480304496 0.3393140604319721 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_33"><static>true</static><pose>702.0249627848132 -405.31430124164933 51.90023171844976 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>133.51822226370246 97.13894458963509 103.80046343689952</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>133.51822226370246 97.13894458963509 103.80046343689952</size></box></geometry>
-        <material><ambient>0.10614483983115135 0.1179387109235015 0.12383564646967658 1</ambient><diffuse>0.2122896796623027 0.235877421847003 0.24767129293935317 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_34"><static>true</static><pose>883.6184709057948 -321.6108218575264 68.55215466626422 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>117.81368210494352 142.76955394326026 137.10430933252843</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>117.81368210494352 142.76955394326026 137.10430933252843</size></box></geometry>
-        <material><ambient>0.14260483787939873 0.1584498198659986 0.16637231085929854 1</ambient><diffuse>0.28520967575879747 0.3168996397319972 0.3327446217185971 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="mt_35"><static>true</static><pose>815.9737763968616 -143.87819232934277 44.846540711441165 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>114.4840945925102 113.88628984159367 89.69308142288233</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>114.4840945925102 113.88628984159367 89.69308142288233</size></box></geometry>
-        <material><ambient>0.12421933207398045 0.1380214800822005 0.14492255408631052 1</ambient><diffuse>0.2484386641479609 0.276042960164401 0.28984510817262105 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="peak_0"><static>true</static><pose>1200.0 0.0 154.6806887094888 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>237.5373911481292 277.94147747757563 309.3613774189776</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>237.5373911481292 277.94147747757563 309.3613774189776</size></box></geometry>
-        <material><ambient>0.0798462076191666 0.08923987910377443 0.1033303863306862 1</ambient><diffuse>0.1596924152383332 0.17847975820754886 0.2066607726613724 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="peak_1"><static>true</static><pose>1039.2304845413264 599.9999999999999 130.19659615767017 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>194.10933870134522 262.0174297258628 260.39319231534034</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>194.10933870134522 262.0174297258628 260.39319231534034</size></box></geometry>
-        <material><ambient>0.0849543153532897 0.09494894068897085 0.10994087869249258 1</ambient><diffuse>0.1699086307065794 0.1898978813779417 0.21988175738498517 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="peak_2"><static>true</static><pose>600.0000000000001 1039.2304845413264 114.26566813306087 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>208.31976121830715 204.84461317847254 228.53133626612174</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>208.31976121830715 204.84461317847254 228.53133626612174</size></box></geometry>
-        <material><ambient>0.08597053491867597 0.09608471549734372 0.11125598636534538 1</ambient><diffuse>0.17194106983735194 0.19216943099468745 0.22251197273069076 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="peak_3"><static>true</static><pose>7.347880794884119e-14 1200.0 118.73548359115753 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>270.02452790588165 207.6069968569494 237.47096718231506</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>270.02452790588165 207.6069968569494 237.47096718231506</size></box></geometry>
-        <material><ambient>0.10578586956190224 0.11823126598094956 0.13689936060952054 1</ambient><diffuse>0.21157173912380448 0.23646253196189912 0.2737987212190411 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="peak_4"><static>true</static><pose>-599.9999999999998 1039.2304845413264 141.2743984337386 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>156.57648283823457 279.90672089365444 282.5487968674772</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>156.57648283823457 279.90672089365444 282.5487968674772</size></box></geometry>
-        <material><ambient>0.10492493789271837 0.11726904823303817 0.1357852137435179 1</ambient><diffuse>0.20984987578543673 0.23453809646607635 0.2715704274870358 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="peak_5"><static>true</static><pose>-1039.2304845413264 599.9999999999999 172.67471929635633 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>270.4277077910566 260.3304454738597 345.34943859271266</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>270.4277077910566 260.3304454738597 345.34943859271266</size></box></geometry>
-        <material><ambient>0.08215457776053307 0.09181982220294872 0.10631768886657222 1</ambient><diffuse>0.16430915552106615 0.18363964440589745 0.21263537773314445 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="peak_6"><static>true</static><pose>-1200.0 1.4695761589768238e-13 136.4230844088039 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>177.7871488958936 202.13523803142886 272.8461688176078</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>177.7871488958936 202.13523803142886 272.8461688176078</size></box></geometry>
-        <material><ambient>0.07849360359905408 0.08772814519894279 0.10157995759877587 1</ambient><diffuse>0.15698720719810816 0.17545629039788557 0.20315991519755175 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="peak_7"><static>true</static><pose>-1039.2304845413264 -600.0000000000001 128.4229839232687 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>278.09014969136433 184.47639756237976 256.8459678465374</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>278.09014969136433 184.47639756237976 256.8459678465374</size></box></geometry>
-        <material><ambient>0.10315840046625135 0.11529468287404562 0.13349910648573707 1</ambient><diffuse>0.2063168009325027 0.23058936574809125 0.26699821297147414 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="peak_8"><static>true</static><pose>-600.0000000000006 -1039.230484541326 134.12562755043575 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>204.99097317872116 274.4512933117575 268.2512551008715</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>204.99097317872116 274.4512933117575 268.2512551008715</size></box></geometry>
-        <material><ambient>0.11034437144275228 0.12332606220072313 0.14279859833767944 1</ambient><diffuse>0.22068874288550455 0.24665212440144627 0.2855971966753589 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="peak_9"><static>true</static><pose>-2.2043642384652357e-13 -1200.0 141.68262425542136 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>243.39307578852237 170.12358728562833 283.3652485108427</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>243.39307578852237 170.12358728562833 283.3652485108427</size></box></geometry>
-        <material><ambient>0.08658806606681518 0.09677489736879344 0.11205514432176084 1</ambient><diffuse>0.17317613213363037 0.19354979473758688 0.22411028864352167 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="peak_10"><static>true</static><pose>600.0000000000001 -1039.2304845413264 172.6532023726869 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>225.2934378061133 220.48537617865566 345.3064047453738</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>225.2934378061133 220.48537617865566 345.3064047453738</size></box></geometry>
-        <material><ambient>0.10193116905288818 0.11392307129440443 0.13191092465667884 1</ambient><diffuse>0.20386233810577636 0.22784614258880886 0.26382184931335767 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
-    <model name="peak_11"><static>true</static><pose>1039.230484541326 -600.0000000000006 104.28739546806123 0 0 0</pose><link name="l">
-      <collision name="c"><geometry><box><size>225.94308727966626 215.37054977953676 208.57479093612247</size></box></geometry></collision>
-      <visual name="v"><geometry><box><size>225.94308727966626 215.37054977953676 208.57479093612247</size></box></geometry>
-        <material><ambient>0.1054924763296417 0.11790335589783485 0.13651967525012457 1</ambient><diffuse>0.2109849526592834 0.2358067117956697 0.27303935050024913 1</diffuse><specular>0.02 0.02 0.02 1</specular>
-        <pbr><metal><roughness>0.98</roughness><metalness>0.0</metalness></metal></pbr></material></visual></link></model>
+    <!-- ═══ VAST INDUSTRIAL BACKGROUND SECTORS ═══ -->
+    <!-- Sector 5 (West Background Expansion) -->
+    <model name="s5_fence_n"><static>true</static><pose>-500 200 2 0 0 0</pose><link name="l">
+      <collision name="c"><geometry><box><size>600 0.5 4</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>600 0.5 4</size></box></geometry>
+        <material><ambient>0.26 0.24 0.22 1</ambient><diffuse>0.34 0.32 0.28 1</diffuse></material></visual></link></model>
+    <model name="s5_fence_s"><static>true</static><pose>-500 -200 2 0 0 0</pose><link name="l">
+      <collision name="c"><geometry><box><size>600 0.5 4</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>600 0.5 4</size></box></geometry>
+        <material><ambient>0.26 0.24 0.22 1</ambient><diffuse>0.34 0.32 0.28 1</diffuse></material></visual></link></model>
+
+    <!-- Arrays of detailed background tanks and factories in Sector 5 -->
+    <model name="s5_factory_1"><static>true</static><pose>-300 150 15 0 0 0</pose><link name="l">
+      <collision name="c"><geometry><box><size>80 60 30</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>80 60 30</size></box></geometry>
+        <material><ambient>0.3 0.3 0.32 1</ambient><diffuse>0.35 0.35 0.38 1</diffuse>
+        <pbr><metal><roughness>0.6</roughness><metalness>0.2</metalness></metal></pbr></material></visual>
+      <visual name="roof"><pose>0 0 15 0 0 0</pose><geometry><box><size>82 62 2</size></box></geometry>
+        <material><ambient>0.2 0.2 0.2 1</ambient></material></visual></link></model>
+    
+    <model name="s5_tanks_detailed"><static>true</static><pose>-400 50 0 0 0 0</pose><link name="l">
+      <!-- Large storage tank 1 -->
+      <collision name="c1"><pose>0 0 15 0 0 0</pose><geometry><cylinder><radius>15</radius><length>30</length></cylinder></geometry></collision>
+      <visual name="v1"><pose>0 0 15 0 0 0</pose><geometry><cylinder><radius>15</radius><length>30</length></cylinder></geometry>
+        <material><ambient>0.7 0.7 0.7 1</ambient><diffuse>0.8 0.8 0.8 1</diffuse>
+        <pbr><metal><roughness>0.4</roughness><metalness>0.7</metalness></metal></pbr></material></visual>
+      <!-- Large storage tank 2 -->
+      <collision name="c2"><pose>0 40 15 0 0 0</pose><geometry><cylinder><radius>15</radius><length>30</length></cylinder></geometry></collision>
+      <visual name="v2"><pose>0 40 15 0 0 0</pose><geometry><cylinder><radius>15</radius><length>30</length></cylinder></geometry>
+        <material><ambient>0.65 0.65 0.65 1</ambient><diffuse>0.75 0.75 0.75 1</diffuse>
+        <pbr><metal><roughness>0.4</roughness><metalness>0.7</metalness></metal></pbr></material></visual>
+      <!-- Pipe connecting them -->
+      <visual name="pipe"><pose>0 20 28 1.5707 0 0</pose><geometry><cylinder><radius>0.8</radius><length>40</length></cylinder></geometry>
+        <material><ambient>0.3 0.3 0.3 1</ambient></material></visual>
+    </link></model>
+
+    <!-- Sector 6 (East Background Expansion) -->
+    <model name="s6_fence_e"><static>true</static><pose>900 0 2 0 0 1.5707</pose><link name="l">
+      <visual name="v"><geometry><box><size>1000 0.5 4</size></box></geometry>
+        <material><ambient>0.26 0.24 0.22 1</ambient><diffuse>0.34 0.32 0.28 1</diffuse></material></visual></link></model>
+    
+    <!-- Complex Processing Area in Sector 6 -->
+    <model name="s6_processing"><static>true</static><pose>750 100 0 0 0 0</pose><link name="l">
+      <!-- Main structure base -->
+      <collision name="c_base"><pose>0 0 5 0 0 0</pose><geometry><box><size>60 40 10</size></box></geometry></collision>
+      <visual name="v_base"><pose>0 0 5 0 0 0</pose><geometry><box><size>60 40 10</size></box></geometry>
+        <material><ambient>0.25 0.25 0.25 1</ambient></material></visual>
+      <!-- Tall chimneys/columns -->
+      <collision name="c_col1"><pose>-15 0 40 0 0 0</pose><geometry><cylinder><radius>3</radius><length>80</length></cylinder></geometry></collision>
+      <visual name="v_col1"><pose>-15 0 40 0 0 0</pose><geometry><cylinder><radius>3</radius><length>80</length></cylinder></geometry>
+        <material><ambient>0.5 0.5 0.5 1</ambient><pbr><metal><roughness>0.5</roughness><metalness>0.6</metalness></metal></pbr></material></visual>
+      <collision name="c_col2"><pose>15 0 35 0 0 0</pose><geometry><cylinder><radius>4</radius><length>70</length></cylinder></geometry></collision>
+      <visual name="v_col2"><pose>15 0 35 0 0 0</pose><geometry><cylinder><radius>4</radius><length>70</length></cylinder></geometry>
+        <material><ambient>0.55 0.55 0.55 1</ambient><pbr><metal><roughness>0.5</roughness><metalness>0.6</metalness></metal></pbr></material></visual>
+      <!-- Horizontal cooling fins -->
+      <visual name="v_fins"><pose>0 0 20 0 0 0</pose><geometry><box><size>50 30 5</size></box></geometry>
+        <material><ambient>0.4 0.4 0.4 1</ambient></material></visual>
+    </link></model>
+
+    <!-- Sector 7 (North Background Expansion) -->
+    <model name="s7_fence_n"><static>true</static><pose>0 900 2 0 0 0</pose><link name="l">
+      <visual name="v"><geometry><box><size>1800 0.5 4</size></box></geometry>
+        <material><ambient>0.26 0.24 0.22 1</ambient><diffuse>0.34 0.32 0.28 1</diffuse></material></visual></link></model>
+    
+    <!-- Administrative & Logistics Hub in Sector 7 -->
+    <model name="s7_admin_complex"><static>true</static><pose>0 750 0 0 0 0</pose><link name="l">
+      <!-- Main office building -->
+      <collision name="c_office"><pose>-150 0 20 0 0 0</pose><geometry><box><size>120 60 40</size></box></geometry></collision>
+      <visual name="v_office"><pose>-150 0 20 0 0 0</pose><geometry><box><size>120 60 40</size></box></geometry>
+        <material><ambient>0.4 0.45 0.5 1</ambient><diffuse>0.5 0.55 0.6 1</diffuse>
+        <pbr><metal><roughness>0.2</roughness><metalness>0.3</metalness></metal></pbr></material></visual>
+      <!-- Glass facade -->
+      <visual name="v_glass"><pose>-150 -30.5 20 0 0 0</pose><geometry><box><size>110 0.5 35</size></box></geometry>
+        <material><ambient>0.1 0.2 0.3 1</ambient><diffuse>0.2 0.4 0.6 1</diffuse>
+        <pbr><metal><roughness>0.1</roughness><metalness>0.9</metalness></metal></pbr></material></visual>
+      <!-- Large warehouse -->
+      <collision name="c_warehouse"><pose>150 0 15 0 0 0</pose><geometry><box><size>160 100 30</size></box></geometry></collision>
+      <visual name="v_warehouse"><pose>150 0 15 0 0 0</pose><geometry><box><size>160 100 30</size></box></geometry>
+        <material><ambient>0.35 0.35 0.35 1</ambient><diffuse>0.4 0.4 0.4 1</diffuse></material></visual>
+    </link></model>
+
+    <!-- Sector 8 (South Background Expansion) -->
+    <model name="s8_fence_s"><static>true</static><pose>0 -800 2 0 0 0</pose><link name="l">
+      <visual name="v"><geometry><box><size>1600 0.5 4</size></box></geometry>
+        <material><ambient>0.26 0.24 0.22 1</ambient><diffuse>0.34 0.32 0.28 1</diffuse></material></visual></link></model>
+    
+    <!-- Massive Storage Farm in Sector 8 -->
+    <model name="s8_storage_farm"><static>true</static><pose>100 -600 0 0 0 0</pose><link name="l">
+      <!-- Huge spherical tank -->
+      <collision name="c_sph1"><pose>0 0 20 0 0 0</pose><geometry><sphere><radius>20</radius></sphere></geometry></collision>
+      <visual name="v_sph1"><pose>0 0 20 0 0 0</pose><geometry><sphere><radius>20</radius></sphere></geometry>
+        <material><ambient>0.8 0.8 0.82 1</ambient><diffuse>0.9 0.9 0.92 1</diffuse>
+        <pbr><metal><roughness>0.2</roughness><metalness>0.8</metalness></metal></pbr></material></visual>
+      <!-- Concrete base -->
+      <visual name="v_base1"><pose>0 0 5 0 0 0</pose><geometry><cylinder><radius>18</radius><length>10</length></cylinder></geometry>
+        <material><ambient>0.3 0.3 0.3 1</ambient></material></visual>
+      
+      <!-- Second spherical tank -->
+      <collision name="c_sph2"><pose>80 0 20 0 0 0</pose><geometry><sphere><radius>20</radius></sphere></geometry></collision>
+      <visual name="v_sph2"><pose>80 0 20 0 0 0</pose><geometry><sphere><radius>20</radius></sphere></geometry>
+        <material><ambient>0.8 0.8 0.82 1</ambient><diffuse>0.9 0.9 0.92 1</diffuse>
+        <pbr><metal><roughness>0.2</roughness><metalness>0.8</metalness></metal></pbr></material></visual>
+      <visual name="v_base2"><pose>80 0 5 0 0 0</pose><geometry><cylinder><radius>18</radius><length>10</length></cylinder></geometry>
+        <material><ambient>0.3 0.3 0.3 1</ambient></material></visual>
+      
+      <!-- Cylindrical storage cluster -->
+      <collision name="c_cyl1"><pose>0 80 15 0 0 0</pose><geometry><cylinder><radius>12</radius><length>30</length></cylinder></geometry></collision>
+      <visual name="v_cyl1"><pose>0 80 15 0 0 0</pose><geometry><cylinder><radius>12</radius><length>30</length></cylinder></geometry>
+        <material><ambient>0.6 0.6 0.6 1</ambient><pbr><metal><roughness>0.3</roughness><metalness>0.7</metalness></metal></pbr></material></visual>
+      <collision name="c_cyl2"><pose>30 80 15 0 0 0</pose><geometry><cylinder><radius>12</radius><length>30</length></cylinder></geometry></collision>
+      <visual name="v_cyl2"><pose>30 80 15 0 0 0</pose><geometry><cylinder><radius>12</radius><length>30</length></cylinder></geometry>
+        <material><ambient>0.6 0.6 0.6 1</ambient><pbr><metal><roughness>0.3</roughness><metalness>0.7</metalness></metal></pbr></material></visual>
+    </link></model>
 
   </world>
 </sdf>

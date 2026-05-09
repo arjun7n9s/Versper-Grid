@@ -37,6 +37,21 @@ def generate_launch_description():
         name="IGN_GAZEBO_SYSTEM_PLUGIN_PATH",
         value=plugin_dir + ":" + os.environ.get("IGN_GAZEBO_SYSTEM_PLUGIN_PATH", ""),
     )
+    # Tell Gazebo where to find textures/materials and custom models
+    models_dir = str(pkg_dir / "models")
+    resource_dir = str(pkg_dir)
+    set_resource_path = SetEnvironmentVariable(
+        name="IGN_GAZEBO_RESOURCE_PATH",
+        value=resource_dir + ":" + models_dir + ":" + os.environ.get("IGN_GAZEBO_RESOURCE_PATH", ""),
+    )
+    set_resource_path2 = SetEnvironmentVariable(
+        name="GZ_SIM_RESOURCE_PATH",
+        value=resource_dir + ":" + models_dir + ":" + os.environ.get("GZ_SIM_RESOURCE_PATH", ""),
+    )
+    set_model_path = SetEnvironmentVariable(
+        name="GAZEBO_MODEL_PATH",
+        value=models_dir + ":" + os.environ.get("GAZEBO_MODEL_PATH", ""),
+    )
 
     # Ignition Fortress: use 'ign gazebo' (Harmonic uses 'gz sim')
     gz_sim = ExecuteProcess(
@@ -89,12 +104,20 @@ def generate_launch_description():
         executable="parameter_bridge",
         name="bridge_drone_d1",
         arguments=[
-            f"{_ign('drone_d1', 'base_link', 'drone_cam', 'image')}{IMG}",
-            f"{_ign('drone_d1', 'base_link', 'drone_cam', 'camera_info')}{CAM_INFO}",
+            f"{_ign('drone_d1', 'base_link', 'drone_cam',       'image')}{IMG}",
+            f"{_ign('drone_d1', 'base_link', 'drone_cam',       'camera_info')}{CAM_INFO}",
+            f"{_ign('drone_d1', 'base_link', 'drone_cam_wide',  'image')}{IMG}",
+            f"{_ign('drone_d1', 'base_link', 'drone_cam_wide',  'camera_info')}{CAM_INFO}",
+            f"{_ign('drone_d1', 'base_link', 'drone_cam_track', 'image')}{IMG}",
+            f"{_ign('drone_d1', 'base_link', 'drone_cam_track', 'camera_info')}{CAM_INFO}",
         ],
         remappings=[
-            (_ign("drone_d1", "base_link", "drone_cam", "image"),       "/drone_d1/image_raw"),
-            (_ign("drone_d1", "base_link", "drone_cam", "camera_info"), "/drone_d1/camera_info"),
+            (_ign("drone_d1", "base_link", "drone_cam",       "image"),       "/drone_d1/image_raw"),
+            (_ign("drone_d1", "base_link", "drone_cam",       "camera_info"), "/drone_d1/camera_info"),
+            (_ign("drone_d1", "base_link", "drone_cam_wide",  "image"),       "/drone_d1/image_wide"),
+            (_ign("drone_d1", "base_link", "drone_cam_wide",  "camera_info"), "/drone_d1/camera_info_wide"),
+            (_ign("drone_d1", "base_link", "drone_cam_track", "image"),       "/drone_d1/image_track"),
+            (_ign("drone_d1", "base_link", "drone_cam_track", "camera_info"), "/drone_d1/camera_info_track"),
         ],
         output="screen",
     )
@@ -132,6 +155,9 @@ def generate_launch_description():
         set_mesa_gl,
         set_libgl,
         set_plugin_path,
+        set_resource_path,
+        set_resource_path2,
+        set_model_path,
         gz_sim,
         bridge_cctv_gate,
         bridge_cctv_south,

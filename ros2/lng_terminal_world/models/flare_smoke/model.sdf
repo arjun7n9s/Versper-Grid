@@ -1,0 +1,33 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="flare_smoke">
+    <static>true</static>
+    <link name="smoke_link">
+      <!-- Mostly upward with slight wind lean -->
+      <pose>0 0 0 0 -1.2 0.3</pose>
+      <particle_emitter name="flare_smoke_emitter" type="box">
+        <emitting>true</emitting>
+        <size>1.5 1.5 0</size>
+        <particle_size>0.8 0.8 0.8</particle_size>
+        <lifetime>8</lifetime>
+        <min_velocity>2.0</min_velocity>
+        <max_velocity>5.0</max_velocity>
+        <scale_rate>2.5</scale_rate>
+        <rate>8</rate>
+        <color_start>0.15 0.15 0.15 0.3</color_start>
+        <color_end>0.35 0.35 0.35 0.0</color_end>
+        <particle_scatter_ratio>0.8</particle_scatter_ratio>
+        <material>
+          <diffuse>0.2 0.2 0.2</diffuse>
+          <specular>0.1 0.1 0.1</specular>
+          <pbr>
+            <metal>
+              <albedo_map>materials/textures/smoke_puff.png</albedo_map>
+            </metal>
+          </pbr>
+        </material>
+        <color_range_image>materials/textures/smoke_colors.png</color_range_image>
+      </particle_emitter>
+    </link>
+  </model>
+</sdf>

@@ -1,0 +1,34 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="ambient_dust">
+    <static>true</static>
+    <link name="dust_link">
+      <!-- Slight upward drift -->
+      <pose>0 0 0 0 -0.1 0</pose>
+      <particle_emitter name="dust_particles" type="box">
+        <emitting>true</emitting>
+        <!-- HUGE spawn area covers entire facility -->
+        <size>300 300 0</size>
+        <particle_size>0.15 0.15 0.15</particle_size>
+        <lifetime>25</lifetime>
+        <min_velocity>0.05</min_velocity>
+        <max_velocity>0.3</max_velocity>
+        <scale_rate>0.2</scale_rate>
+        <rate>20</rate>
+        <color_start>0.6 0.6 0.55 0.08</color_start>
+        <color_end>0.7 0.7 0.65 0.0</color_end>
+        <particle_scatter_ratio>2.0</particle_scatter_ratio>
+        <material>
+          <diffuse>0.6 0.6 0.55</diffuse>
+          <specular>0.3 0.3 0.3</specular>
+          <pbr>
+            <metal>
+              <albedo_map>materials/textures/smoke_puff.png</albedo_map>
+            </metal>
+          </pbr>
+        </material>
+        <color_range_image>materials/textures/smoke_colors.png</color_range_image>
+      </particle_emitter>
+    </link>
+  </model>
+</sdf>

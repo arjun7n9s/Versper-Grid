@@ -24,7 +24,7 @@ install(TARGETS DroneAnimator
   LIBRARY DESTINATION lib/${PROJECT_NAME}
 )
 
-install(DIRECTORY worlds launch materials
+install(DIRECTORY worlds launch materials models
   DESTINATION share/${PROJECT_NAME}
 )
 
