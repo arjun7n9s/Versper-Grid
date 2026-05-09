@@ -47,3 +47,4 @@ e2e_screenshots/
 ros2/build/
 ros2/install/
 ros2/log/
+ros2_temp/
