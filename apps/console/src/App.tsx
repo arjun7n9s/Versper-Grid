@@ -116,17 +116,27 @@ function FeedPanel() {
       </div>
 
       <div className="feed-viewport">
-        {isLive && !imgErr[active] ? (
-          <img
-            src={src}
-            alt={feed.label}
-            style={{width:"100%",height:"100%",objectFit:"cover"}}
-            onError={() => setImgErr(p => ({...p, [active]: true}))}
-          />
+        {isLive ? (
+          <>
+            <img
+              key={active}
+              src={src}
+              alt={feed.label}
+              style={{width:"100%",height:"100%",objectFit:"cover", display: imgErr[active] ? "none" : "block"}}
+              onLoad={() => setImgErr(p => ({...p, [active]: false}))}
+              onError={() => setImgErr(p => ({...p, [active]: true}))}
+            />
+            {imgErr[active] && (
+              <div className="feed-no-signal">
+                <Video size={28} />
+                <span>Retrying…</span>
+              </div>
+            )}
+          </>
         ) : (
           <div className="feed-no-signal">
             <Video size={28} />
-            <span>{isLive && imgErr[active] ? "Frame Error — Retrying…" : "Awaiting Signal"}</span>
+            <span>Awaiting Signal</span>
           </div>
         )}
       </div>
