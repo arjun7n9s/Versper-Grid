@@ -1,0 +1,32 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <model name="gas_haze">
+    <pose>0 0 0 0 -1.5707 0</pose>
+    <static>true</static>
+    <link name="haze_link">
+      <particle_emitter name="gas_haze" type="box">
+        <emitting>true</emitting>
+        <size>6 6 0</size>
+        <particle_size>3.0 3.0 0.8</particle_size>
+        <lifetime>12</lifetime>
+        <min_velocity>0.2</min_velocity>
+        <max_velocity>0.8</max_velocity>
+        <scale_rate>1.2</scale_rate>
+        <rate>12</rate>
+        <color_start>0.65 0.70 0.65 0.4</color_start>
+        <color_end>0.75 0.78 0.75 0.0</color_end>
+        <particle_scatter_ratio>0.3</particle_scatter_ratio>
+        <material>
+          <diffuse>0.7 0.7 0.7</diffuse>
+          <specular>1.0 1.0 1.0</specular>
+          <pbr>
+            <metal>
+              <albedo_map>materials/textures/smoke_puff.png</albedo_map>
+            </metal>
+          </pbr>
+        </material>
+        <color_range_image>materials/textures/smoke_colors.png</color_range_image>
+      </particle_emitter>
+    </link>
+  </model>
+</sdf>

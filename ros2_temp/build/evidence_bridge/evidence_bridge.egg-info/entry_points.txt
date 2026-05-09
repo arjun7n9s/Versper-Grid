@@ -1,0 +1,4 @@
+[console_scripts]
+bridge_node = evidence_bridge.bridge_node:main
+gas_leak_publisher = evidence_bridge.gas_leak_publisher:main
+

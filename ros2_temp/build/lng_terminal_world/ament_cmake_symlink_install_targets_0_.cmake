@@ -1,0 +1,1 @@
+ament_cmake_symlink_install_targets("TARGET_FILES" "/home/arjun7n9s/Downloads/AMD-S-2/ros2_temp/build/lng_terminal_world/libDroneAnimator.so" "TARGETS" "DroneAnimator" "LIBRARY_DESTINATION" "lib/lng_terminal_world")

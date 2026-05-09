@@ -1,0 +1,4 @@
+source;share/lng_terminal_world/local_setup.bash
+source;share/lng_terminal_world/local_setup.dsv
+source;share/lng_terminal_world/local_setup.sh
+source;share/lng_terminal_world/local_setup.zsh

@@ -1,0 +1,11 @@
+setup.py
+evidence_bridge/__init__.py
+evidence_bridge/bridge_node.py
+evidence_bridge/gas_leak_publisher.py
+evidence_bridge.egg-info/PKG-INFO
+evidence_bridge.egg-info/SOURCES.txt
+evidence_bridge.egg-info/dependency_links.txt
+evidence_bridge.egg-info/entry_points.txt
+evidence_bridge.egg-info/requires.txt
+evidence_bridge.egg-info/top_level.txt
+launch/bridge.launch.py

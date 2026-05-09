@@ -68,6 +68,7 @@ function FeedPanel() {
   const [active, setActive]       = useState("cctv_south");
   const [bust,   setBust]         = useState<Record<string,number>>({});
   const [avail,  setAvail]        = useState<Record<string,boolean>>({});
+  const [imgErr, setImgErr]       = useState<Record<string,boolean>>({});
   const [ts,     setTs]           = useState("");
 
   useEffect(() => {
@@ -79,6 +80,7 @@ function FeedPanel() {
           const av: Record<string,boolean> = {};
           for (const f of feeds) av[f.source] = f.available;
           setAvail(av);
+          setImgErr({});
         }
       } catch { /* silent */ }
       const now = Date.now();
@@ -114,12 +116,17 @@ function FeedPanel() {
       </div>
 
       <div className="feed-viewport">
-        {isLive ? (
-          <img src={src} alt={feed.label} onError={e => { (e.currentTarget as HTMLImageElement).className = "hidden"; setAvail(p => ({...p, [active]: false})); }} />
+        {isLive && !imgErr[active] ? (
+          <img
+            src={src}
+            alt={feed.label}
+            style={{width:"100%",height:"100%",objectFit:"cover"}}
+            onError={() => setImgErr(p => ({...p, [active]: true}))}
+          />
         ) : (
           <div className="feed-no-signal">
             <Video size={28} />
-            <span>Awaiting Signal</span>
+            <span>{isLive && imgErr[active] ? "Frame Error — Retrying…" : "Awaiting Signal"}</span>
           </div>
         )}
       </div>

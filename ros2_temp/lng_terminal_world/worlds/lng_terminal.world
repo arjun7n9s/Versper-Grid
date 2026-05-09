@@ -1,0 +1,182 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="lng_terminal">
+
+    <plugin name="gazebo_ros_state" filename="libgazebo_ros_state.so"/>
+
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <!-- Compound perimeter wall (simplified) -->
+    <model name="perimeter_north">
+      <static>true</static>
+      <pose>0 30 1 0 0 0</pose>
+      <link name="wall">
+        <collision name="col"><geometry><box><size>60 0.3 2</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>60 0.3 2</size></box></geometry>
+          <material><ambient>0.5 0.5 0.5 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="perimeter_south">
+      <static>true</static>
+      <pose>0 -30 1 0 0 0</pose>
+      <link name="wall">
+        <collision name="col"><geometry><box><size>60 0.3 2</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>60 0.3 2</size></box></geometry>
+          <material><ambient>0.5 0.5 0.5 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- LNG storage tank A -->
+    <model name="tank_a">
+      <static>true</static>
+      <pose>10 8 2 0 0 0</pose>
+      <link name="body">
+        <collision name="col"><geometry><cylinder><radius>4</radius><length>4</length></cylinder></geometry></collision>
+        <visual name="vis">
+          <geometry><cylinder><radius>4</radius><length>4</length></cylinder></geometry>
+          <material><ambient>0.8 0.8 0.9 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- LNG storage tank B (source of simulated leak) -->
+    <model name="tank_b">
+      <static>true</static>
+      <pose>-8 10 2 0 0 0</pose>
+      <link name="body">
+        <collision name="col"><geometry><cylinder><radius>4</radius><length>4</length></cylinder></geometry></collision>
+        <visual name="vis">
+          <geometry><cylinder><radius>4</radius><length>4</length></cylinder></geometry>
+          <material><ambient>0.8 0.8 0.9 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Service lane / gate area -->
+    <model name="gate_structure">
+      <static>true</static>
+      <pose>25 0 1 0 0 0</pose>
+      <link name="frame">
+        <collision name="col"><geometry><box><size>1 8 2</size></box></geometry></collision>
+        <visual name="vis">
+          <geometry><box><size>1 8 2</size></box></geometry>
+          <material><ambient>0.3 0.3 0.3 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Worker actor near tank_b — moves along a path during the incident -->
+    <actor name="worker_01">
+      <pose>-5 8 0 0 0 0</pose>
+      <skin>
+        <filename>walk.dae</filename>
+        <scale>1.0</scale>
+      </skin>
+      <animation name="walking">
+        <filename>walk.dae</filename>
+        <interpolate_x>true</interpolate_x>
+      </animation>
+      <script>
+        <loop>true</loop>
+        <delay_start>0</delay_start>
+        <auto_start>true</auto_start>
+        <trajectory id="0" type="walking">
+          <waypoint><time>0</time><pose>-5 8 0 0 0 0</pose></waypoint>
+          <waypoint><time>4</time><pose>-10 8 0 0 0 1.57</pose></waypoint>
+          <waypoint><time>8</time><pose>-10 14 0 0 0 3.14</pose></waypoint>
+          <waypoint><time>12</time><pose>-5 14 0 0 0 -1.57</pose></waypoint>
+          <waypoint><time>16</time><pose>-5 8 0 0 0 0</pose></waypoint>
+        </trajectory>
+      </script>
+    </actor>
+
+    <!-- FIXED CCTV CAMERA at gate — sensor plugin -->
+    <model name="cctv_gate">
+      <static>true</static>
+      <pose>22 0 4 0 0.3 3.14</pose>
+      <link name="body">
+        <visual name="vis">
+          <geometry><box><size>0.1 0.2 0.1</size></box></geometry>
+          <material><ambient>0 0 0 1</ambient></material>
+        </visual>
+        <sensor name="cctv_cam" type="camera">
+          <update_rate>2</update_rate>
+          <camera>
+            <horizontal_fov>1.3962634</horizontal_fov>
+            <image><width>640</width><height>480</height><format>R8G8B8</format></image>
+            <clip><near>0.1</near><far>100</far></clip>
+          </camera>
+          <plugin name="cctv_gate_plugin" filename="libgazebo_ros_camera.so">
+            <ros>
+              <namespace>/cctv_gate</namespace>
+              <remapping>~/image_raw:=image_raw</remapping>
+            </ros>
+            <camera_name>cctv_gate</camera_name>
+            <frame_name>cctv_gate_frame</frame_name>
+          </plugin>
+        </sensor>
+      </link>
+    </model>
+
+    <!-- GAS SENSOR near tank_b base -->
+    <model name="gas_sensor_0">
+      <static>true</static>
+      <pose>-8 6 0.2 0 0 0</pose>
+      <link name="body">
+        <visual name="vis">
+          <geometry><box><size>0.1 0.1 0.2</size></box></geometry>
+          <material><ambient>1 0.5 0 1</ambient></material>
+        </visual>
+      </link>
+      <plugin name="gas_sensor_plugin" filename="libgazebo_ros_ray_sensor.so">
+        <ros><namespace>/gas_sensor_0</namespace></ros>
+        <output_type>sensor_msgs/LaserScan</output_type>
+        <frame_name>gas_sensor_0</frame_name>
+      </plugin>
+    </model>
+
+    <!-- DRONE MODEL with downward camera — starts at 15m altitude above compound -->
+    <model name="drone">
+      <pose>0 0 15 0 0 0</pose>
+      <link name="base_link">
+        <inertial><mass>1.5</mass></inertial>
+        <visual name="body_vis">
+          <geometry><box><size>0.5 0.5 0.15</size></box></geometry>
+          <material><ambient>0.1 0.1 0.1 1</ambient></material>
+        </visual>
+        <collision name="body_col">
+          <geometry><box><size>0.5 0.5 0.15</size></box></geometry>
+        </collision>
+        <sensor name="drone_cam" type="camera">
+          <pose>0 0 -0.08 0 1.5707 0</pose>
+          <update_rate>5</update_rate>
+          <camera>
+            <horizontal_fov>1.0472</horizontal_fov>
+            <image><width>1280</width><height>720</height><format>R8G8B8</format></image>
+            <clip><near>0.5</near><far>200</far></clip>
+          </camera>
+          <plugin name="drone_cam_plugin" filename="libgazebo_ros_camera.so">
+            <ros>
+              <namespace>/drone_cam</namespace>
+              <remapping>~/image_raw:=image_raw</remapping>
+            </ros>
+            <camera_name>drone_cam</camera_name>
+            <frame_name>drone_cam_frame</frame_name>
+          </plugin>
+        </sensor>
+      </link>
+    </model>
+
+  </world>
+</sdf>
