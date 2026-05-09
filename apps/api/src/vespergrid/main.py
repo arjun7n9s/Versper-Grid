@@ -110,8 +110,8 @@ async def ingest_upload(
         location=location,
         field_notes=field_notes,
         media_count=len(images),
-        sensor_count=max(sensor_count, len(sensor_samples)),
-        sensor_trace=sensor_samples,
+        sensor_count=min(20, max(sensor_count, len(sensor_samples))),
+        sensor_trace=sensor_samples[:20],
     )
     job = await registry.create(req)
 
