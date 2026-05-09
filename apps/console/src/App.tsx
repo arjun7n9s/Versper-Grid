@@ -1,152 +1,32 @@
 import {
-  Activity,
-  AlertTriangle,
-  BarChart3,
-  BrainCircuit,
-  CheckCircle2,
-  Clock3,
-  Cpu,
-  FileAudio,
-  FileText,
-  GitBranch,
-  Layers3,
-  Link2,
-  Mic,
-  Radar,
-  Radio,
-  Route,
-  ShieldCheck,
-  Sparkles,
-  UploadCloud,
-  Video,
-  Zap
+  Activity, AlertTriangle, CheckCircle2, ChevronRight,
+  Cpu, FileText, HelpCircle, Mic, Radio, Send,
+  ShieldAlert, Siren, Video, Waves, Zap, Image, Volume2, GitMerge
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  fallbackScenario,
-  type EvidenceItem,
-  type ResponseAction,
-  type Scenario,
-  type Severity,
-  type UncertaintyIssue
-} from "./domain";
+import { useEffect, useRef, useState } from "react";
+import { fallbackScenario, type EvidenceItem, type Scenario } from "./domain";
 
 declare const __API_BASE__: string;
 const API_BASE = typeof __API_BASE__ !== "undefined" ? __API_BASE__ : "";
 
-const demoVoiceReports = [
-  {
-    source_uuid: "SRC-AUD-S2347",
-    speaker: "S2347",
-    role: "sector supervisor",
-    location: "Sector 4",
-    transcript: "Supervisor S2347 from Sector 4 reports smoke coming from the tanker area and spreading across the sector.",
-    file: "/audio/2347-Sector4.aac"
-  },
-  {
-    source_uuid: "SRC-AUD-S2451",
-    speaker: "S2451",
-    role: "nearby sector supervisor",
-    location: "Sector 5",
-    transcript: "Supervisor S2451 from Sector 5 reports a strange smell over the last ten minutes.",
-    file: "/audio/2451-sector5.aac"
-  }
+// ─── Demo data ────────────────────────────────────────────────────────────
+const DEMO_VOICE = [
+  { source_uuid: "SRC-AUD-S2347", speaker: "S2347", role: "sector supervisor",        location: "Sector 4", transcript: "Supervisor S2347 from Sector 4 — smoke is coming from the tanker area and spreading across the sector.", file: "/audio/2347-Sector4.aac" },
+  { source_uuid: "SRC-AUD-S2451", speaker: "S2451", role: "nearby sector supervisor", location: "Sector 5", transcript: "Supervisor S2451 from Sector 5 — strange smell in the air for the past ten minutes.",                    file: "/audio/2451-sector5.aac" },
 ];
-
-type VoiceReport = (typeof demoVoiceReports)[number];
-type VoicePlaybackState = {
-  source_uuid: string;
-  speaker: string;
-  location: string;
-  status: "idle" | "queued" | "speaking" | "complete";
-};
 
 function demoSensorTrace() {
   const now = Date.now() / 1000;
-  return Array.from({ length: 30 }, (_, index) => {
-    const t = index * 3;
+  return Array.from({ length: 30 }, (_, i) => {
+    const t = i * 3;
     const gas = t < 18 ? 2.4 + Math.sin(t) * 0.3 : t < 60 ? 2.4 + (t - 18) * 0.72 : 32;
-    return {
-      timestamp: now - (29 - index) * 3,
-      gas_ppm: Math.round(gas * 10) / 10,
-      wind_speed_mps: 3.7,
-      wind_direction_deg: 225
-    };
+    return { timestamp: now - (29 - i) * 3, gas_ppm: Math.round(gas * 10) / 10, wind_speed_mps: 3.7, wind_direction_deg: 225 };
   });
-}
-
-const severityLabels: Record<Severity, string> = {
-  watch: "Watch",
-  elevated: "Elevated",
-  critical: "Critical"
-};
-
-/**
- * Source-UUID -> visual asset. The judging "wow moment" is clicking a
- * candidate plan / uncertainty issue and immediately seeing the exact
- * piece of evidence that produced it. SRC-LIVE-9001 is the runtime live
- * operator note (no image asset).
- */
-const sourceAssets: Record<string, { src?: string; alt: string; tag: string }> = {
-  "SRC-IMG-1042": {
-    src: "/assets/drone_keyframe_src_img_1042.png",
-    alt: "Synthetic drone keyframe with thermal anomaly",
-    tag: "DRONE / FRAME 03"
-  },
-  "SRC-VID-2217": {
-    src: "/assets/cctv_gate4_src_vid_2217.png",
-    alt: "Gate 4 CCTV keyframe showing service lane obstruction",
-    tag: "GATE 4 CCTV"
-  },
-  "SRC-SEN-0924": {
-    src: "/assets/wind_sensor_src_sen_0924.png",
-    alt: "Wind telemetry strip",
-    tag: "WIND TELEMETRY"
-  },
-  "SRC-TXT-7781": {
-    alt: "Operator radio transcript excerpt",
-    tag: "OPERATOR RADIO"
-  },
-  "SRC-LIVE-9001": {
-    alt: "Live operator note appended at runtime",
-    tag: "LIVE NOTE"
-  }
-};
-
-async function loadScenario(): Promise<Scenario> {
-  const response = await fetch(`${API_BASE}/api/scenarios/sector-4-containment`);
-  if (!response.ok) throw new Error("scenario unavailable");
-  return response.json();
-}
-
-interface IngestProgress {
-  stage: string;
-  message: string;
-  progress: number;
-  backend: string;
-}
-
-async function startIngestJob(note: string): Promise<{ job_id: string; backend: string }> {
-  const response = await fetch(`${API_BASE}/api/ingest`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      location: "Sector 4 — Tank B-4 Flange, Northgate LNG Terminal",
-      field_notes: note,
-      media_count: 3,
-      sensor_count: 2
-    })
-  });
-  if (!response.ok) throw new Error("ingest unavailable");
-  return response.json();
 }
 
 async function startIngestUpload(
-  note: string,
-  files: File[],
-  audioFiles: File[] = [],
-  voiceManifest: typeof demoVoiceReports = [],
-  sensorTrace: Array<Record<string, number>> = []
+  note: string, files: File[], audioFiles: File[] = [],
+  voiceManifest: typeof DEMO_VOICE = [], sensorTrace: Array<Record<string,number>> = []
 ): Promise<{ job_id: string; backend: string }> {
   const form = new FormData();
   form.append("location", "Sector 4 — Tank B-4 Flange, Northgate LNG Terminal");
@@ -156,1056 +36,542 @@ async function startIngestUpload(
   form.append("voice_manifest", JSON.stringify(voiceManifest));
   for (const f of files) form.append("images", f);
   for (const f of audioFiles) form.append("audio", f);
-  const response = await fetch(`${API_BASE}/api/ingest/upload`, {
-    method: "POST",
-    body: form
-  });
-  if (!response.ok) throw new Error("ingest upload unavailable");
-  return response.json();
+  const res = await fetch(`${API_BASE}/api/ingest/upload`, { method: "POST", body: form });
+  if (!res.ok) throw new Error("ingest upload failed");
+  return res.json();
 }
 
-async function transcribeOperatorAudio(file: File, fallbackText: string) {
-  const form = new FormData();
-  form.append("audio", file);
-  form.append("fallback_text", fallbackText);
-  const response = await fetch(`${API_BASE}/api/audio/transcribe`, {
-    method: "POST",
-    body: form
-  });
-  if (!response.ok) throw new Error("audio transcription unavailable");
-  return response.json() as Promise<{ text: string; confidence: number; backend: string }>;
+// ─── Helpers ──────────────────────────────────────────────────────────────
+function priorityClass(impact: number) {
+  if (impact >= 85) return "priority-critical";
+  if (impact >= 70) return "priority-high";
+  return "priority-medium";
 }
 
-async function playVoiceSequence(
-  reports: VoiceReport[],
-  onState: (states: VoicePlaybackState[]) => void
-) {
-  const states: VoicePlaybackState[] = reports.map((report, index) => ({
-    source_uuid: report.source_uuid,
-    speaker: report.speaker,
-    location: report.location,
-    status: index === 0 ? "queued" : "idle",
-  }));
-  onState(states);
-
-  for (let i = 0; i < reports.length; i += 1) {
-    states.forEach((state, idx) => {
-      state.status = idx < i ? "complete" : idx === i ? "speaking" : idx === i + 1 ? "queued" : "idle";
-    });
-    onState([...states]);
-    try {
-      await new Promise<void>((resolve) => {
-        const audio = new Audio(reports[i].file);
-        const finish = () => resolve();
-        audio.addEventListener("ended", finish, { once: true });
-        audio.addEventListener("error", finish, { once: true });
-        void audio.play().catch(() => resolve());
-        window.setTimeout(resolve, 12_000);
-      });
-    } catch {
-      /* keep pipeline moving */
-    }
+function evKindIcon(kind: EvidenceItem["kind"]) {
+  switch (kind) {
+    case "image":  return <Image  size={14} />;
+    case "audio":  return <Volume2 size={14} />;
+    case "sensor": return <Waves  size={14} />;
+    default:       return <FileText size={14} />;
   }
-
-  states.forEach((state) => {
-    state.status = "complete";
-  });
-  onState([...states]);
 }
 
-function ingestStream(
-  jobId: string,
-  backend: string,
-  onProgress: (p: IngestProgress) => void
-): Promise<Scenario> {
-  return new Promise((resolve, reject) => {
-    const source = new EventSource(`${API_BASE}/api/ingest/${jobId}/events`);
-    const stages = ["queued", "sampling", "parsing", "transcribing", "analyzing", "normalizing", "synthesizing", "complete", "error"];
-    for (const stage of stages) {
-      source.addEventListener(stage, (event) => {
-        try {
-          const ev = JSON.parse((event as MessageEvent).data);
-          onProgress({ stage: ev.stage, message: ev.message, progress: ev.progress, backend });
-        } catch {
-          /* ignore malformed event */
-        }
-      });
-    }
-    source.addEventListener("snapshot", (event) => {
-      try {
-        const snap = JSON.parse((event as MessageEvent).data);
-        source.close();
-        if (snap.status === "complete" && snap.result) {
-          resolve(snap.result as Scenario);
-        } else {
-          reject(new Error(snap.error || "ingest pipeline failed"));
-        }
-      } catch (err) {
-        source.close();
-        reject(err as Error);
-      }
-    });
-    source.onerror = () => {
-      source.close();
-      reject(new Error("ingest stream interrupted"));
-    };
-  });
-}
-
-function pct(value: number): string {
-  return `${Math.round(value * 100)}%`;
-}
-
-function SourcePreview({
-  scenario,
-  selectedSource
-}: {
-  scenario: Scenario;
-  selectedSource: string | null;
-}) {
-  if (!selectedSource) return null;
-  const evidence = scenario.evidence.find((e) => e.sourceUuid === selectedSource);
-  const action = scenario.actions.find((a) => a.sourceEntityId === selectedSource);
-  const issue = scenario.uncertainties.find((u) =>
-    u.sourceEntityIds.includes(selectedSource)
-  );
-  const asset = sourceAssets[selectedSource];
-  const mediaUrl = evidence?.assetUrl ? `${API_BASE}${evidence.assetUrl}` : asset?.src;
-  if (!evidence && !action && !issue) return null;
-
-  return (
-    <section className="panel source-preview" aria-label="Source preview">
-      <div className="panel-title">
-        <Link2 size={18} />
-        <span>Source Lineage</span>
-      </div>
-      <div className="source-preview-body">
-        {evidence?.kind === "audio" && mediaUrl ? (
-          <div className="source-thumb source-thumb-text">
-            <Radio size={28} />
-            <span>{evidence.source}</span>
-            <audio controls src={mediaUrl} />
-          </div>
-        ) : mediaUrl ? (
-          <img className="source-thumb" src={mediaUrl} alt={asset?.alt ?? evidence?.source ?? "Evidence asset"} />
-        ) : (
-          <div className="source-thumb source-thumb-text">
-            <span>{asset?.tag ?? selectedSource}</span>
-            <small>{asset?.alt ?? "No image asset"}</small>
-          </div>
-        )}
-        <div className="source-meta">
-          <div className="source-uuid">{selectedSource}</div>
-          {evidence && (
-            <>
-              <h4>{evidence.source}</h4>
-              <p>{evidence.summary}</p>
-              {evidence.transcript && <p className="transcript-line">"{evidence.transcript}"</p>}
-              <div className="source-stats">
-                <span>signal: {evidence.signal}</span>
-                <span>confidence: {pct(evidence.confidence)}</span>
-              </div>
-            </>
-          )}
-          {action && (
-            <div className="source-link-row">
-              <Route size={13} />
-              <span>{action.title}</span>
-            </div>
-          )}
-          {issue && (
-            <div className="source-link-row warn">
-              <AlertTriangle size={13} />
-              <span>{issue.title}: {issue.detail}</span>
-            </div>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function EvidenceIcon({ item }: { item: EvidenceItem }) {
-  if (item.kind === "image") return <Layers3 size={16} />;
-  if (item.kind === "video") return <Activity size={16} />;
-  if (item.kind === "sensor") return <Radar size={16} />;
-  if (item.kind === "audio") return <FileAudio size={16} />;
-  return <FileText size={16} />;
-}
-
-function OrbitalMap({
-  scenario,
-  selectedSource
-}: {
-  scenario: Scenario;
-  selectedSource: string | null;
-}) {
-  const highlightedZones = new Set(
-    scenario.evidence.filter((item) => item.sourceUuid === selectedSource && item.linkedZoneId).map((item) => item.linkedZoneId)
-  );
-
-  return (
-    <section className="map-stage" aria-label="Operational twin map">
-      <img src="/assets/vesper-field-map.png" alt="" className="map-image" />
-      <div className="wind-vector" />
-      <div className="route-line route-a" />
-      <div className="route-line route-b" />
-      {scenario.zones.map((zone) => (
-        <button
-          className={`risk-zone ${zone.severity} ${highlightedZones.has(zone.id) ? "selected" : ""}`}
-          key={zone.id}
-          style={{
-            left: `${zone.x}%`,
-            top: `${zone.y}%`,
-            width: `${zone.radius * 2}%`,
-            height: `${zone.radius * 2}%`
-          }}
-          title={`${zone.label}: ${zone.rationale}`}
-        >
-          <span>{zone.label}</span>
-        </button>
-      ))}
-      <div className="map-readout">
-        <span>Operational Twin</span>
-        <strong>{scenario.clock}</strong>
-      </div>
-    </section>
-  );
-}
-
-function EvidenceRail({
-  evidence,
-  selectedSource,
-  onSelect
-}: {
-  evidence: EvidenceItem[];
-  selectedSource: string | null;
-  onSelect: (sourceUuid: string) => void;
-}) {
-  return (
-    <section className="panel evidence-panel">
-      <div className="panel-title">
-        <UploadCloud size={18} />
-        <span>Evidence Timeline</span>
-      </div>
-      <div className="evidence-list">
-        {evidence.map((item) => (
-          <button
-            className={`evidence-row ${selectedSource === item.sourceUuid ? "selected" : ""}`}
-            key={item.id}
-            onClick={() => onSelect(item.sourceUuid)}
-          >
-            <div className="evidence-icon">
-              <EvidenceIcon item={item} />
-            </div>
-            <div>
-              <div className="row-heading">
-                <span>{item.source}</span>
-                <b>{pct(item.confidence)}</b>
-              </div>
-              <p>{item.summary}</p>
-              <small>{item.sourceUuid} / {item.signal}</small>
-            </div>
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function ActionStack({
-  scenario,
-  selectedSource,
-  onSelect
-}: {
-  scenario: Scenario;
-  selectedSource: string | null;
-  onSelect: (sourceUuid: string) => void;
-}) {
-  return (
-    <section className="panel action-panel">
-      <div className="panel-title">
-        <Route size={18} />
-        <span>Response Options</span>
-      </div>
-      {scenario.actions.map((action, index) => (
-        <article className={`action-card ${selectedSource === action.sourceEntityId ? "selected" : ""}`} key={action.id}>
-          <div className="action-index">{index + 1}</div>
-          <div className="action-body">
-            <h3>{action.title}</h3>
-            <div className="action-meta">
-              <span>{action.owner}</span>
-              <span>{action.etaMinutes} min</span>
-              <span>{action.impact}% impact</span>
-              <span>{pct(action.confidence)} confidence</span>
-            </div>
-            <p>{action.caveat}</p>
-            <button className="lineage-button" onClick={() => onSelect(action.sourceEntityId)}>
-              <Link2 size={14} />
-              Trace {action.sourceEntityId}
-            </button>
-          </div>
-        </article>
-      ))}
-    </section>
-  );
-}
-
-function UncertaintyLedger({
-  issues,
-  onSelect
-}: {
-  issues: UncertaintyIssue[];
-  onSelect: (sourceUuid: string) => void;
-}) {
-  return (
-    <section className="panel uncertainty-panel">
-      <div className="panel-title">
-        <AlertTriangle size={18} />
-        <span>Uncertainty Ledger</span>
-      </div>
-      <div className="uncertainty-list">
-        {issues.map((issue) => (
-          <article className={`uncertainty-row ${issue.severity}`} key={issue.id}>
-            <div className="row-heading">
-              <span>{issue.title}</span>
-              <b>{severityLabels[issue.severity]}</b>
-            </div>
-            <p>{issue.detail}</p>
-            <div className="source-chips">
-              {issue.sourceEntityIds.map((source) => (
-                <button key={source} onClick={() => onSelect(source)}>
-                  {source}
-                </button>
-              ))}
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function GpuTelemetry({ scenario }: { scenario: Scenario }) {
-  const totalMemory = scenario.gpu.reduce((sum, lane) => sum + lane.memoryGb, 0);
-  const avgUtil = Math.round(scenario.gpu.reduce((sum, lane) => sum + lane.utilization, 0) / scenario.gpu.length);
-  const totalLatency = scenario.gpu.reduce((sum, lane) => sum + lane.latencyMs, 0);
-
-  return (
-    <section className="panel gpu-panel">
-      <div className="panel-title">
-        <Cpu size={18} />
-        <span>MI300X Runtime</span>
-      </div>
-      <div className="gpu-summary">
-        <div>
-          <small>Mean Utilization</small>
-          <strong>{avgUtil}%</strong>
-        </div>
-        <div>
-          <small>E2E Latency</small>
-          <strong>{(totalLatency / 1000).toFixed(1)}s</strong>
-        </div>
-      </div>
-      <div className="gpu-lanes">
-        {scenario.gpu.map((lane) => (
-          <div className="gpu-lane" key={lane.label}>
-            <div className="row-heading">
-              <span>{lane.label}</span>
-              <b>{lane.utilization}%</b>
-            </div>
-            <div className="lane-bar">
-              <span style={{ width: `${lane.utilization}%` }} />
-            </div>
-            <p>{lane.workload}</p>
-            <small>{lane.memoryGb} GB VRAM / {lane.latencyMs} ms</small>
-          </div>
-        ))}
-      </div>
-      <p className="runtime-note">{totalMemory} GB allocated across warm model lanes.</p>
-    </section>
-  );
-}
-
-function BriefPanel({
-  scenario,
-  onSelect
-}: {
-  scenario: Scenario;
-  onSelect: (sourceUuid: string) => void;
-}) {
-  const primaryAction = scenario.actions[0];
-
-  return (
-    <section className="panel brief-panel">
-      <div className="panel-title">
-        <BrainCircuit size={18} />
-        <span>Incident State</span>
-      </div>
-      <div className="brief-lines">
-        {scenario.brief.map((line) => (
-          <p key={line}>{line}</p>
-        ))}
-      </div>
-      {primaryAction && (
-        <button className="approve-button" onClick={() => onSelect(primaryAction.sourceEntityId)}>
-          <CheckCircle2 size={16} />
-          Mark candidate reviewed
-        </button>
-      )}
-    </section>
-  );
-}
-
-// ── Gazebo Live Feed Panel ────────────────────────────────────────────────
-const GAZEBO_FEEDS = [
-  { id: "cctv_south",  label: "CCTV South — B-4",  topic: "/cctv_south/image_raw" },
-  { id: "drone_d1",   label: "Drone D-1 (primary)", topic: "/drone_d1/image_raw" },
-  { id: "cctv_gate",  label: "CCTV Gate",           topic: "/cctv_gate/image_raw" },
+// ─── FEED PANEL ──────────────────────────────────────────────────────────
+const FEEDS = [
+  { id: "cctv_south", label: "CCTV South", topic: "/cctv_south/image_raw" },
+  { id: "drone_d1",   label: "Drone D-1",  topic: "/drone_d1/image_raw"   },
+  { id: "cctv_gate",  label: "CCTV Gate",  topic: "/cctv_gate/image_raw"  },
 ];
 
-function GazeboFeedPanel() {
-  const [activeFeed, setActiveFeed] = useState("cctv_south");
-  // cachebust token per feed — bumped every 10s to force img reload
-  const [bust, setBust] = useState<Record<string, number>>({
-    cctv_south: Date.now(), drone_d1: Date.now(), cctv_gate: Date.now(),
-  });
-  // track which feeds actually have a frame available
-  const [available, setAvailable] = useState<Record<string, boolean>>({
-    cctv_south: false, drone_d1: false, cctv_gate: false,
-  });
+function FeedPanel() {
+  const [active, setActive]       = useState("cctv_south");
+  const [bust,   setBust]         = useState<Record<string,number>>({});
+  const [avail,  setAvail]        = useState<Record<string,boolean>>({});
+  const [ts,     setTs]           = useState("");
 
   useEffect(() => {
     const poll = async () => {
-      // Check /api/feeds to know which sources have frames
       try {
         const res = await fetch(`${API_BASE}/api/feeds`);
         if (res.ok) {
-          const feeds: Array<{ source: string; available: boolean }> = await res.json();
-          const av: Record<string, boolean> = {};
+          const feeds: Array<{source:string;available:boolean}> = await res.json();
+          const av: Record<string,boolean> = {};
           for (const f of feeds) av[f.source] = f.available;
-          setAvailable(av);
+          setAvail(av);
         }
       } catch { /* silent */ }
-      // always bump bust so img refreshes
-      setBust({ cctv_south: Date.now(), drone_d1: Date.now(), cctv_gate: Date.now() });
+      const now = Date.now();
+      setBust({ cctv_south: now, drone_d1: now, cctv_gate: now });
+      setTs(new Date().toLocaleTimeString("en-GB", { hour12: false }));
     };
     poll();
-    const id = window.setInterval(poll, 5_000);
-    return () => window.clearInterval(id);
+    const id = setInterval(poll, 5000);
+    return () => clearInterval(id);
   }, []);
 
-  const feed = GAZEBO_FEEDS.find((f) => f.id === activeFeed)!;
-  const hasFrame = available[activeFeed];
-  const imgSrc = `${API_BASE}/api/feeds/latest/${activeFeed}?t=${bust[activeFeed]}`;
+  const feed   = FEEDS.find(f => f.id === active)!;
+  const src    = `${API_BASE}/api/feeds/latest/${active}?t=${bust[active] ?? 0}`;
+  const isLive = avail[active];
 
   return (
-    <section className="panel gazebo-panel">
-      <div className="panel-title">
-        <Video size={18} />
-        <span>Gazebo Live Feeds</span>
-        {hasFrame && <span className="feed-live-dot" title="Frames received from frame_sampler" />}
+    <div className="panel feeds-panel">
+      <div className="panel-head">
+        <span className="panel-label"><Video size={13} /> Gazebo Live Feeds</span>
+        <div className="live-dot" title="Live polling active" />
       </div>
+
       <div className="feed-tabs">
-        {GAZEBO_FEEDS.map((f) => (
+        {FEEDS.map(f => (
           <button
             key={f.id}
-            className={`feed-tab ${activeFeed === f.id ? "active" : ""} ${available[f.id] ? "has-frame" : ""}`}
-            onClick={() => setActiveFeed(f.id)}
+            className={`feed-tab ${active === f.id ? "active" : ""} ${avail[f.id] ? "live" : ""}`}
+            onClick={() => setActive(f.id)}
           >
             {f.label}
-            {available[f.id] && <span className="feed-tab-dot" />}
           </button>
         ))}
       </div>
+
       <div className="feed-viewport">
-        {hasFrame ? (
-          <img
-            key={imgSrc}
-            src={imgSrc}
-            alt={`${feed.label} latest frame`}
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-              setAvailable((prev) => ({ ...prev, [activeFeed]: false }));
-            }}
-          />
+        {isLive ? (
+          <img src={src} alt={feed.label} onError={e => { (e.currentTarget as HTMLImageElement).className = "hidden"; setAvail(p => ({...p, [active]: false})); }} />
         ) : (
-          <div className="feed-placeholder">
-            <Video size={32} style={{ opacity: 0.28 }} />
-            <span>{feed.label}</span>
-            <small>{feed.topic}</small>
-            <small style={{ color: "#818679", marginTop: 6 }}>
-              Waiting for Gazebo + frame_sampler
-            </small>
+          <div className="feed-no-signal">
+            <Video size={28} />
+            <span>Awaiting Signal</span>
           </div>
         )}
       </div>
-      <div className="feed-meta">
-        <small>ROS2 topic</small>
-        <code>{feed.topic}</code>
-        <small style={{ marginTop: 6 }}>Last polled</small>
-        <code>{new Date(bust[activeFeed]).toLocaleTimeString()}</code>
+
+      <div className="feed-footer">
+        <span className="feed-topic">{feed.topic}</span>
+        <span className="feed-ts">{ts || "--:--:--"}</span>
       </div>
-    </section>
+    </div>
   );
 }
 
-// ── Live Job Ticker — auto-watches incoming frame_sampler jobs ────────────
-interface JobTick {
-  job_id: string;
-  backend: string;
-  status: string;
-  stage: string;
-  message: string;
-  progress: number;
-  ts: number;
-}
+// ─── PIPELINE TICKER ─────────────────────────────────────────────────────
+type Tick = { job_id: string; backend: string; status: "running"|"complete"|"error"; stage: string; message: string; progress: number; ts: number };
 
-function LiveJobTicker({
-  onScenarioUpdate,
-  onRegister
-}: {
-  onScenarioUpdate: (s: Scenario) => void;
-  onRegister: (fn: (jobId: string, backend: string) => void) => void;
-}) {
-  const [ticks, setTicks] = useState<JobTick[]>([]);
-  const watchedRef = useRef<Set<string>>(new Set());
+function PipelineTicker({ onScenarioUpdate, watchFnRef }: { onScenarioUpdate: (s: Scenario) => void; watchFnRef: React.MutableRefObject<((id:string,b:string)=>void)|null> }) {
+  const [ticks, setTicks] = useState<Tick[]>([]);
+  const watched = useRef<Set<string>>(new Set());
 
   const watchJob = (jobId: string, backend: string) => {
-    if (watchedRef.current.has(jobId)) return;
-    watchedRef.current.add(jobId);
-
-    const source = new EventSource(`${API_BASE}/api/ingest/${jobId}/events`);
-    const stages = ["queued", "sampling", "parsing", "transcribing", "analyzing", "normalizing", "synthesizing", "complete", "error"];
-    for (const stage of stages) {
-      source.addEventListener(stage, (event) => {
+    if (watched.current.has(jobId)) return;
+    watched.current.add(jobId);
+    const es = new EventSource(`${API_BASE}/api/ingest/${jobId}/events`);
+    const STAGES = ["queued","sampling","transcribing","analyzing","parsing","normalizing","synthesizing","complete","error"];
+    for (const stage of STAGES) {
+      es.addEventListener(stage, (e: Event) => {
         try {
-          const ev = JSON.parse((event as MessageEvent).data);
-          setTicks((prev) => [
-            { job_id: jobId, backend, status: "running", stage: ev.stage,
-              message: ev.message, progress: ev.progress, ts: Date.now() },
-            ...prev.slice(0, 19),
-          ]);
-        } catch { /* ignore */ }
+          const ev = JSON.parse((e as MessageEvent).data);
+          setTicks(p => [{ job_id: jobId, backend, status: stage === "error" ? "error" : "running", stage: ev.stage, message: ev.message, progress: ev.progress, ts: Date.now() }, ...p.slice(0, 24)]);
+        } catch { /* */ }
       });
     }
-    source.addEventListener("snapshot", (event) => {
+    es.addEventListener("snapshot", (e: Event) => {
       try {
-        const snap = JSON.parse((event as MessageEvent).data);
-        source.close();
+        const snap = JSON.parse((e as MessageEvent).data);
+        es.close();
         if (snap.status === "complete" && snap.result) {
           onScenarioUpdate(snap.result as Scenario);
-          setTicks((prev) => [
-            { job_id: jobId, backend, status: "complete", stage: "complete",
-              message: `Scenario updated — ${snap.result.evidence?.length ?? 0} evidence items`,
-              progress: 1, ts: Date.now() },
-            ...prev.slice(0, 19),
-          ]);
+          setTicks(p => [{ job_id: jobId, backend, status: "complete", stage: "complete", message: "Scenario updated — scenario live", progress: 1, ts: Date.now() }, ...p.slice(0, 24)]);
         }
-      } catch { /* ignore */ }
+      } catch { /* */ }
     });
-    source.onerror = () => source.close();
+    es.onerror = () => es.close();
   };
 
-  // Register watchJob with parent so upload jobs can be piped in
-  useEffect(() => { onRegister(watchJob); }, []);  // eslint-disable-line
+  useEffect(() => { watchFnRef.current = watchJob; });
 
-  // Poll /api/jobs every 8s — auto-discovers jobs from frame_sampler
   useEffect(() => {
     const poll = async () => {
       try {
         const res = await fetch(`${API_BASE}/api/jobs?limit=10`);
         if (!res.ok) return;
-        const jobs: Array<{ job_id: string; backend: string; status: string }> = await res.json();
-        for (const j of jobs) {
-          if (!watchedRef.current.has(j.job_id)) {
-            watchJob(j.job_id, j.backend);
-          }
-        }
-      } catch { /* silent — API may be briefly unavailable */ }
+        const jobs = await res.json();
+        for (const j of jobs) watchJob(j.job_id, j.backend);
+      } catch { /* */ }
     };
     poll();
-    const id = window.setInterval(poll, 8_000);
-    return () => window.clearInterval(id);
-  }, []);  // eslint-disable-line
-
-  if (ticks.length === 0) {
-    return (
-      <section className="panel ticker-panel">
-        <div className="panel-title">
-          <Zap size={18} />
-          <span>Pipeline Ticker</span>
-        </div>
-        <p className="ticker-empty">Awaiting frame_sampler jobs from Gazebo…</p>
-      </section>
-    );
-  }
-
-  return (
-    <section className="panel ticker-panel">
-      <div className="panel-title">
-        <Zap size={18} />
-        <span>Pipeline Ticker</span>
-        <span className="feed-live-dot" />
-      </div>
-      <div className="ticker-list">
-        {ticks.map((t, i) => (
-          <div key={`${t.job_id}-${i}`} className={`ticker-row ${t.status}`}>
-            <div className="ticker-bar">
-              <span style={{ width: `${Math.round(t.progress * 100)}%` }} />
-            </div>
-            <div className="ticker-meta">
-              <code>{t.job_id}</code>
-              <span className="ticker-stage">{t.stage.toUpperCase()}</span>
-              <small>{t.backend}</small>
-            </div>
-            <p>{t.message}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function LiveIngestPanel({
-  onIngest,
-  onIngestUpload,
-  processing,
-  progress
-}: {
-  onIngest: (note: string) => void;
-  onIngestUpload: (note: string, files: File[]) => void;
-  processing: boolean;
-  progress: IngestProgress | null;
-}) {
-  const [note, setNote] = useState(
-    "Active LNG flange failure at Tank B-4 south cluster. Gas plume visible. Worker evacuation in progress."
-  );
-  const [files, setFiles] = useState<File[]>([]);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const pct = progress ? Math.round(progress.progress * 100) : 0;
-  const hasFiles = files.length > 0;
-  const buttonLabel = processing
-    ? progress
-      ? `${progress.stage.toUpperCase()} \u00b7 ${pct}%`
-      : "Dispatching\u2026"
-    : hasFiles
-    ? `Submit ${files.length} frame(s) → MI300X`
-    : "Run deterministic synthesizer";
-
-  const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFiles(Array.from(e.target.files ?? []).slice(0, 5));
-  };
-
-  const handleSubmit = () => {
-    if (hasFiles) onIngestUpload(note, files);
-    else onIngest(note);
-  };
-
-  return (
-    <section className="panel ingest-panel">
-      <div className="panel-title">
-        <ShieldCheck size={18} />
-        <span>Live Ingest — Submit to MI300X</span>
-      </div>
-      <textarea value={note} onChange={(event) => setNote(event.target.value)} />
-      <div className="ingest-upload-row">
-        <button
-          className="upload-pick-btn"
-          onClick={() => fileRef.current?.click()}
-          disabled={processing}
-        >
-          <UploadCloud size={14} />
-          {hasFiles ? `${files.length} frame(s) selected` : "Attach frames (optional)"}
-        </button>
-        {hasFiles && (
-          <button className="upload-clear-btn" onClick={() => { setFiles([]); if (fileRef.current) fileRef.current.value = ""; }}>
-            ✕
-          </button>
-        )}
-        <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={handleFiles} />
-      </div>
-      {hasFiles && (
-        <div className="ingest-file-chips">
-          {files.map((f) => <span key={f.name}>{f.name}</span>)}
-        </div>
-      )}
-      <button className="ingest-button" disabled={processing} onClick={handleSubmit}>
-        {buttonLabel}
-      </button>
-      {processing && (
-        <div className="ingest-progress" role="status" aria-live="polite">
-          <div className="ingest-progress-bar">
-            <span style={{ width: `${pct}%` }} />
-          </div>
-          <p>
-            {progress?.message ?? "Awaiting first event from orchestrator\u2026"}
-          </p>
-          <small>
-            backend: {progress?.backend ?? "\u2026"}
-            {" \u00b7 "}
-            stage: {progress?.stage ?? "queued"}
-          </small>
-        </div>
-      )}
-    </section>
-  );
-}
-
-function SensorTrendPanel({ scenario }: { scenario: Scenario }) {
-  const sensorEvidence = [...scenario.evidence].reverse().find((item) => item.kind === "sensor");
-  const trace = demoSensorTrace();
-  const max = Math.max(...trace.map((p) => p.gas_ppm), 30);
-  const points = trace
-    .map((p, i) => `${(i / (trace.length - 1)) * 100},${58 - (p.gas_ppm / max) * 54}`)
-    .join(" ");
-  const peak = sensorEvidence?.metadata?.peak_ppm ?? Math.max(...trace.map((p) => p.gas_ppm));
-  const band = sensorEvidence?.metadata?.toxicity_band ?? "demo trace";
-
-  return (
-    <section className="panel sensor-panel">
-      <div className="panel-title">
-        <BarChart3 size={18} />
-        <span>Gas Trend</span>
-      </div>
-      <div className="sensor-chart">
-        <svg viewBox="0 0 100 62" preserveAspectRatio="none">
-          <line x1="0" y1="30" x2="100" y2="30" />
-          <polyline points={points} />
-        </svg>
-      </div>
-      <div className="sensor-stats">
-        <div><small>Peak ppm</small><strong>{String(peak)}</strong></div>
-        <div><small>Band</small><strong>{String(band)}</strong></div>
-      </div>
-      <p>{sensorEvidence?.summary ?? "Awaiting structured gas and wind telemetry from ROS2."}</p>
-    </section>
-  );
-}
-
-function VoiceChannelPanel({
-  onVoiceIncident,
-  onRunVoiceTest,
-  playbackStates,
-  processing
-}: {
-  onVoiceIncident: (operatorText: string, operatorAudio: File | null) => Promise<void>;
-  onRunVoiceTest: () => Promise<void>;
-  playbackStates: VoicePlaybackState[];
-  processing: boolean;
-}) {
-  const [recording, setRecording] = useState(false);
-  const [operatorText, setOperatorText] = useState(
-    "Attention everybody, VesperGrid is showing contamination risk in the workspace. Supervisors around Sector 4, give me current status."
-  );
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
-  const chunks = useRef<Blob[]>([]);
-
-  const startRecording = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const recorder = new MediaRecorder(stream);
-    chunks.current = [];
-    recorder.ondataavailable = (event) => {
-      if (event.data.size > 0) chunks.current.push(event.data);
-    };
-    recorder.onstop = async () => {
-      stream.getTracks().forEach((track) => track.stop());
-      const blob = new Blob(chunks.current, { type: "audio/webm" });
-      const file = new File([blob], "operator_command.webm", { type: "audio/webm" });
-      try {
-        const transcript = await transcribeOperatorAudio(file, operatorText);
-        setOperatorText(transcript.text || operatorText);
-        await onVoiceIncident(transcript.text || operatorText, file);
-      } catch {
-        await onVoiceIncident(operatorText, file);
-      }
-    };
-    recorder.start();
-    setMediaRecorder(recorder);
-    setRecording(true);
-  };
-
-  const stopRecording = () => {
-    mediaRecorder?.stop();
-    setRecording(false);
-    setMediaRecorder(null);
-  };
-
-  const dispatchTextOnly = async () => {
-    await onVoiceIncident(operatorText, null);
-  };
-
-  return (
-    <section className="panel voice-panel">
-      <div className="panel-title">
-        <Mic size={18} />
-        <span>Voice Channel</span>
-      </div>
-      <textarea value={operatorText} onChange={(event) => setOperatorText(event.target.value)} />
-      <div className="voice-controls">
-        <button disabled={processing} onClick={recording ? stopRecording : startRecording}>
-          <Mic size={14} />
-          {recording ? "Stop and dispatch" : "Open mic"}
-        </button>
-        <button disabled={processing || recording} onClick={dispatchTextOnly}>
-          <Radio size={14} />
-          Dispatch scripted reports
-        </button>
-        <button disabled={processing || recording} onClick={onRunVoiceTest}>
-          <FileAudio size={14} />
-          Run STT test
-        </button>
-      </div>
-      <div className="voice-report-list">
-        {demoVoiceReports.map((report) => (
-          <article key={report.source_uuid} className={`voice-report-card ${playbackStates.find((item) => item.source_uuid === report.source_uuid)?.status ?? "idle"}`}>
-            <div className="row-heading">
-              <span>{report.speaker}</span>
-              <b>{playbackStates.find((item) => item.source_uuid === report.source_uuid)?.status === "speaking" ? `${report.speaker} speaking` : report.location}</b>
-            </div>
-            <audio controls src={report.file} />
-            <p>{report.transcript}</p>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-export function App() {
-  const [scenario, setScenario] = useState<Scenario>(fallbackScenario);
-  const [backend, setBackend] = useState<"online" | "offline" | "checking">("checking");
-  const [selectedSource, setSelectedSource] = useState<string | null>("SRC-VID-2217");
-  const [processing, setProcessing] = useState(false);
-  const [ingestProgress, setIngestProgress] = useState<IngestProgress | null>(null);
-  const [voicePlaybackStates, setVoicePlaybackStates] = useState<VoicePlaybackState[]>(
-    demoVoiceReports.map((report) => ({
-      source_uuid: report.source_uuid,
-      speaker: report.speaker,
-      location: report.location,
-      status: "idle",
-    }))
-  );
-  const watchJobRef = useRef<((jobId: string, backend: string) => void) | null>(null);
-
-  useEffect(() => {
-    loadScenario()
-      .then((loaded) => {
-        setScenario(loaded);
-        setBackend("online");
-      })
-      .catch(() => setBackend("offline"));
+    const id = setInterval(poll, 8000);
+    return () => clearInterval(id);
   }, []);
 
-  const highestZone = useMemo(
-    () => scenario.zones.find((zone) => zone.severity === "critical") ?? scenario.zones[0],
-    [scenario.zones]
+  return (
+    <div className="panel grow">
+      <div className="panel-head">
+        <span className="panel-label"><Zap size={13} /> Pipeline Ticker</span>
+        {ticks.length > 0 && <span className="panel-badge">{ticks.length}</span>}
+      </div>
+      <div className="panel-body">
+        {ticks.length === 0 ? (
+          <div className="ticker-empty">
+            <Cpu size={24} strokeWidth={1.5} />
+            <span>Awaiting ingest jobs…</span>
+          </div>
+        ) : (
+          <div className="tick-list">
+            {ticks.map((t, i) => (
+              <div key={`${t.job_id}-${i}`} className={`tick-item ${t.status}`}>
+                <div className="tick-header">
+                  <span className="tick-id mono">{t.job_id.slice(0, 12)}…</span>
+                  <span className="tick-stage-badge">{t.stage}</span>
+                </div>
+                <div className="tick-msg">{t.message}</div>
+                <div className="tick-bar">
+                  <div className="tick-bar-fill" style={{ width: `${Math.round(t.progress * 100)}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
+}
 
-  const selectedEvidence = scenario.evidence.find((item) => item.sourceUuid === selectedSource);
+// ─── INCIDENT HEADER ─────────────────────────────────────────────────────
+function IncidentHeader({ scenario }: { scenario: Scenario }) {
+  const pct = Math.round(scenario.confidence * 100);
+  const gas = scenario.evidence.find(e => e.kind === "sensor");
+  const gasPpm = gas?.metadata?.["latest_ppm"] as number | undefined;
 
-  const _runIngestStream = async (
-    job_id: string,
-    jobBackend: string
-  ) => {
-    const loaded = await ingestStream(job_id, jobBackend, setIngestProgress);
-    setScenario(loaded);
-    setSelectedSource(null);
-    setBackend("online");
-  };
+  return (
+    <div className="incident-header">
+      <div className="incident-meta">
+        <div className="severity-tag">
+          <ShieldAlert size={11} /> Critical Incident
+        </div>
+        <span className="incident-loc">{scenario.location}</span>
+      </div>
 
-  const handleIngest = async (note: string) => {
+      <div className="incident-title">{scenario.incident}</div>
+
+      <div className="incident-brief-rows">
+        {scenario.brief.slice(0, 3).map((b, i) => (
+          <div key={i} className="incident-brief-row">{b}</div>
+        ))}
+      </div>
+
+      <div className="incident-kpi-row">
+        <div className="kpi-box">
+          <div className="kpi-label">AI Confidence</div>
+          <div className={`kpi-value ${pct >= 80 ? "cyan" : pct >= 60 ? "amber" : "red"}`}>{pct}%</div>
+        </div>
+        <div className="kpi-box">
+          <div className="kpi-label">Evidence Items</div>
+          <div className="kpi-value cyan">{scenario.evidence.length}</div>
+        </div>
+        <div className="kpi-box">
+          <div className="kpi-label">Gas (ppm)</div>
+          <div className={`kpi-value ${gasPpm && gasPpm > 20 ? "red" : gasPpm ? "amber" : ""}`}>{gasPpm != null ? gasPpm.toFixed(1) : "—"}</div>
+        </div>
+        <div className="kpi-box">
+          <div className="kpi-label">Clock</div>
+          <div className="kpi-value amber">{scenario.clock}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── TACTICAL MAP ────────────────────────────────────────────────────────
+function TacticalMap({ scenario }: { scenario: Scenario }) {
+  return (
+    <div className="map-panel">
+      <img src="/assets/vesper-field-map.png" alt="" className="map-img" />
+      <div className="map-grid-overlay" />
+      <div className="map-vignette" />
+
+      {scenario.zones.map(zone => (
+        <div
+          key={zone.id}
+          className={`risk-zone ${zone.severity}`}
+          style={{ left: `${zone.x}%`, top: `${zone.y}%`, width: `${zone.radius * 2}%`, height: `${zone.radius * 2}%` }}
+        >
+          <div className="zone-pip" />
+          <div className="zone-tooltip">{zone.label}</div>
+        </div>
+      ))}
+
+      <div className="map-hud">
+        <div className="map-hud-box">
+          <label>Active Zones</label>
+          <span>{scenario.zones.length}</span>
+        </div>
+        <div className="map-hud-box">
+          <label>Highest Severity</label>
+          <span>{scenario.zones.some(z => z.severity === "critical") ? "CRITICAL" : scenario.zones.some(z => z.severity === "elevated") ? "ELEVATED" : "WATCH"}</span>
+        </div>
+        <div className="map-hud-box" style={{ marginLeft: "auto" }}>
+          <label>System Clock</label>
+          <span>{scenario.clock}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── GPU BAR ─────────────────────────────────────────────────────────────
+function GpuBar({ scenario }: { scenario: Scenario }) {
+  if (!scenario.gpu?.length) return null;
+  return (
+    <div className="gpu-bar">
+      {scenario.gpu.map((lane, i) => (
+        <div key={i} className="gpu-lane">
+          <div className="gpu-lane-label">{lane.label}</div>
+          <div className="gpu-lane-bar">
+            <div className="gpu-lane-fill" style={{ width: `${lane.utilization}%` }} />
+          </div>
+          <div className="gpu-lane-meta">
+            <span>{lane.utilization}%</span>
+            <span>{lane.latencyMs}ms</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── VOICE CHANNEL ────────────────────────────────────────────────────────
+type VMsg = { id: number; type: "hq"|"field"; sender: string; location: string; text: string; file?: string };
+
+function VoiceChannel({ watchFnRef }: { watchFnRef: React.MutableRefObject<((id:string,b:string)=>void)|null> }) {
+  const [micActive,   setMicActive]   = useState(false);
+  const [messages,    setMessages]    = useState<VMsg[]>([]);
+  const [processing,  setProcessing]  = useState(false);
+  const histRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (histRef.current) histRef.current.scrollTop = histRef.current.scrollHeight;
+  }, [messages]);
+
+  const trigger = async () => {
     setProcessing(true);
-    setIngestProgress(null);
-    try {
-      const { job_id, backend: jobBackend } = await startIngestJob(note);
-      await _runIngestStream(job_id, jobBackend);
-    } catch {
-      setBackend("offline");
-    } finally {
-      setProcessing(false);
-      window.setTimeout(() => setIngestProgress(null), 1400);
+    setMessages(p => [...p, { id: Date.now(), type: "hq", sender: "COMMAND HQ", location: "Ops Center", text: "HQ to all sectors — suspected breach at Tank B-4. Report status immediately." }]);
+    await new Promise(r => setTimeout(r, 1800));
+
+    for (const rep of DEMO_VOICE) {
+      setMessages(p => [...p, { id: Date.now(), type: "field", sender: rep.speaker, location: rep.location, text: rep.transcript, file: rep.file }]);
+      const audio = new Audio(rep.file);
+      void audio.play().catch(() => {/* browser block */});
+      await new Promise<void>(res => { audio.onended = () => res(); setTimeout(res, 9000); });
+      await new Promise(r => setTimeout(r, 800));
     }
+
+    try {
+      const fetchAudio = async (url: string, name: string) => { const res = await fetch(url); const b = await res.blob(); return new File([b], name, { type: "audio/aac" }); };
+      const files = await Promise.all(DEMO_VOICE.map(v => fetchAudio(v.file, v.file.split("/").pop()!)));
+      const job = await startIngestUpload("Multi-sector voice confirmation of breach.", [], files, DEMO_VOICE, demoSensorTrace());
+      if (watchFnRef.current) watchFnRef.current(job.job_id, job.backend);
+    } catch (e) { console.error("Pipeline error", e); }
+    setProcessing(false);
   };
 
-  const handleIngestUpload = async (note: string, files: File[]) => {
-    setProcessing(true);
-    setIngestProgress(null);
-    try {
-      const { job_id, backend: jobBackend } = await startIngestUpload(note, files);
-      watchJobRef.current?.(job_id, jobBackend);
-      await _runIngestStream(job_id, jobBackend);
-    } catch {
-      setBackend("offline");
-    } finally {
-      setProcessing(false);
-      window.setTimeout(() => setIngestProgress(null), 1400);
-    }
-  };
-
-  const handleVoiceIncident = async (operatorText: string, operatorAudio: File | null) => {
-    setProcessing(true);
-    setIngestProgress(null);
-    try {
-      const voiceFiles: File[] = [];
-      if (operatorAudio) voiceFiles.push(operatorAudio);
-      const manifest = [...demoVoiceReports];
-      for (const report of demoVoiceReports) {
-        const response = await fetch(report.file);
-        const blob = await response.blob();
-        voiceFiles.push(new File([blob], report.file.split("/").pop() ?? "voice.aac", { type: blob.type || "audio/aac" }));
-      }
-      void playVoiceSequence(demoVoiceReports, setVoicePlaybackStates);
-      const note = `${operatorText}\n\nDispatch requested two Sector 4 voice status reports.`;
-      const { job_id, backend: jobBackend } = await startIngestUpload(
-        note,
-        [],
-        voiceFiles,
-        operatorAudio
-          ? [
-              {
-                source_uuid: "SRC-AUD-OPERATOR",
-                speaker: "Operator",
-                role: "incident commander",
-                location: "VesperGrid console",
-                transcript: operatorText,
-                file: "operator_command.webm"
-              },
-              ...manifest
-            ]
-          : manifest,
-        demoSensorTrace()
-      );
-      watchJobRef.current?.(job_id, jobBackend);
-      await _runIngestStream(job_id, jobBackend);
-    } catch {
-      setBackend("offline");
-    } finally {
-      setProcessing(false);
-      window.setTimeout(() => {
-        setVoicePlaybackStates((prev) => prev.map((state) => ({ ...state, status: "idle" })));
-      }, 4000);
-      window.setTimeout(() => setIngestProgress(null), 1400);
-    }
-  };
-
-  const handleVoiceTest = async () => {
-    await handleVoiceIncident(
-      "Attention Sector 4 and nearby sectors. VesperGrid is requesting immediate status on smoke, odor, and spill spread.",
-      null
-    );
+  const toggleMic = () => {
+    if (processing) return;
+    if (micActive) { setMicActive(false); void trigger(); }
+    else setMicActive(true);
   };
 
   return (
-    <main className="shell">
-      <header className="topbar">
-        <div className="brand-lockup">
-          <div className="brand-mark">
-            <Sparkles size={20} />
+    <div className="panel voice-panel">
+      <div className="panel-head">
+        <span className="panel-label"><Radio size={13} /> Command Voice Channel</span>
+        {processing && <span className="panel-badge amber">Processing</span>}
+      </div>
+
+      <div className="voice-history" ref={histRef}>
+        {messages.length === 0 ? (
+          <div className="voice-empty">
+            <Radio size={22} strokeWidth={1.5} />
+            <span>No active communications</span>
           </div>
-          <div>
-            <h1>VesperGrid</h1>
-            <p>Critical infrastructure operational twin · AMD MI300X · Northgate LNG Terminal</p>
+        ) : messages.map(m => (
+          <div key={m.id} className={`vmsg ${m.type}`}>
+            <div className="vmsg-meta">
+              <span className="vmsg-sender">{m.sender}</span>
+              <span className="vmsg-loc">{m.location}</span>
+            </div>
+            <div className="vmsg-text">{m.text}</div>
+            {m.file && <audio controls src={m.file} />}
+          </div>
+        ))}
+      </div>
+
+      <div className="voice-controls-bar">
+        <button className={`mic-btn ${micActive ? "active" : ""}`} onClick={toggleMic} disabled={processing} title={micActive ? "Stop & dispatch" : "Activate mic"}>
+          <Mic size={18} />
+        </button>
+        <div className={`waveform ${micActive ? "active" : ""}`}>
+          {Array.from({ length: 7 }, (_, i) => <div key={i} className="wv-bar" />)}
+        </div>
+        <button className="send-btn" onClick={toggleMic} disabled={!micActive || processing}>
+          <Send size={13} /> Dispatch
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── EVIDENCE RAIL ───────────────────────────────────────────────────────
+function EvidenceRail({ evidence, selected, onSelect }: { evidence: EvidenceItem[]; selected: string|null; onSelect: (id: string) => void }) {
+  return (
+    <div className="panel evidence-panel">
+      <div className="panel-head">
+        <span className="panel-label"><GitMerge size={13} /> Evidence Rail</span>
+        <span className="panel-badge">{evidence.length}</span>
+      </div>
+      <div className="panel-body">
+        <div className="evidence-list">
+          {evidence.map(ev => (
+            <div key={ev.id} className={`ev-item ${selected === ev.id ? "selected" : ""}`} onClick={() => onSelect(ev.id)}>
+              <div className={`ev-icon ${ev.kind}`}>{evKindIcon(ev.kind)}</div>
+              <div className="ev-body">
+                <div className="ev-source truncate">{ev.source}</div>
+                <div className="ev-summary">{ev.summary}</div>
+              </div>
+              <span className="ev-conf">{Math.round(ev.confidence * 100)}%</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── RESPONSE ACTIONS ────────────────────────────────────────────────────
+function ResponseActions({ scenario }: { scenario: Scenario }) {
+  const [approved, setApproved] = useState<Set<string>>(new Set());
+
+  const toggle = (id: string) => setApproved(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  return (
+    <div className="panel grow actions-panel">
+      <div className="panel-head">
+        <span className="panel-label"><Siren size={13} /> Response Actions</span>
+        {approved.size > 0 && <span className="panel-badge green">{approved.size} approved</span>}
+      </div>
+      <div className="panel-body">
+        <div className="action-list">
+          {scenario.actions.map(a => (
+            <div key={a.id} className={`action-card ${priorityClass(a.impact)} ${approved.has(a.id) ? "approved" : ""}`}>
+              <div className="action-top">
+                <div className="action-priority" />
+                <div className="action-content">
+                  <div className="action-title">{a.title}</div>
+                  <div className="action-caveat">{a.caveat}</div>
+                </div>
+              </div>
+              <div className="action-bottom">
+                <div className="action-stats">
+                  <div className="action-stat">
+                    <span className="action-stat-label">ETA</span>
+                    <span className="action-stat-value eta">{a.etaMinutes}m</span>
+                  </div>
+                  <div className="action-stat">
+                    <span className="action-stat-label">Impact</span>
+                    <span className="action-stat-value impact">{a.impact}%</span>
+                  </div>
+                  <div className="action-stat">
+                    <span className="action-stat-label">Owner</span>
+                    <span className="action-stat-value">{a.owner}</span>
+                  </div>
+                </div>
+                <button className="action-approve-btn" onClick={() => toggle(a.id)}>
+                  {approved.has(a.id) ? <><CheckCircle2 size={11} /> Approved</> : <><ChevronRight size={11} /> Approve</>}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── UNCERTAINTY LEDGER ──────────────────────────────────────────────────
+function UncertaintyLedger({ scenario }: { scenario: Scenario }) {
+  if (!scenario.uncertainties?.length) return null;
+  return (
+    <div className="panel uncertainty-panel">
+      <div className="panel-head">
+        <span className="panel-label"><HelpCircle size={13} /> Uncertainty Ledger</span>
+        <span className="panel-badge amber">{scenario.uncertainties.length}</span>
+      </div>
+      <div className="panel-body">
+        <div className="unc-list">
+          {scenario.uncertainties.map(u => (
+            <div key={u.id} className={`unc-item ${u.severity}`}>
+              <div className="unc-dot" />
+              <div className="unc-body">
+                <div className="unc-title">{u.title}</div>
+                <div className="unc-detail">{u.detail}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── APP ROOT ────────────────────────────────────────────────────────────
+export function App() {
+  const [scenario,   setScenario]   = useState<Scenario>(fallbackScenario);
+  const [processing, setProcessing] = useState(false);
+  const [selectedEv, setSelectedEv] = useState<string|null>(null);
+  const watchFnRef = useRef<((id:string,b:string)=>void)|null>(null);
+
+  const handleScenarioUpdate = (s: Scenario) => { setScenario(s); setProcessing(false); };
+
+  const criticalZones  = scenario.zones.filter(z => z.severity === "critical").length;
+  const vllmOnline     = scenario.gpu?.some(g => g.utilization > 0) ?? false;
+
+  return (
+    <div className="shell">
+      {processing && <div className="processing-bar" />}
+
+      {/* ── TOPBAR ── */}
+      <header className="topbar">
+        <div className="brand">
+          <div className="brand-icon"><Activity size={18} /></div>
+          <div className="brand-text">
+            <h1>VESPERGRID</h1>
+            <p>Multimodal Ops Command · AMD MI300X</p>
           </div>
         </div>
-        <div className={`backend-pill ${backend}`}>
-          <span />
-          {backend === "checking" ? "Syncing" : backend === "online" ? "MI300X online · vLLM" : "Demo simulation"}
+
+        <div className="topbar-center">
+          <span className="nav-pill active"><ShieldAlert size={12} /> Live Incident</span>
+          <span className="nav-pill"><Cpu size={12} /> MI300X Telemetry</span>
+          <span className="nav-pill"><Activity size={12} /> Sensor Grid</span>
+        </div>
+
+        <div className="topbar-right">
+          {criticalZones > 0 && (
+            <div className="alert-chip">
+              <AlertTriangle size={11} /> {criticalZones} Critical Zone{criticalZones > 1 ? "s" : ""}
+            </div>
+          )}
+          <div className={`status-chip ${vllmOnline ? "" : "warn"}`}>
+            <div className="dot" /> {vllmOnline ? "Qwen-VL · MI300X Online" : "Deterministic Mode"}
+          </div>
         </div>
       </header>
 
-      <section className="hero-band">
-        <div className="hero-copy">
-          <div className="eyebrow">
-            <ShieldCheck size={16} />
-            Track 3: Vision & Multimodal AI / {scenario.category}
-          </div>
-          <h2>{scenario.incident}</h2>
-          <p>{scenario.thesis}</p>
-          <div className="hero-metrics">
-            <div>
-              <small>Location</small>
-              <strong>{scenario.location}</strong>
-            </div>
-            <div>
-              <small>Confidence</small>
-              <strong>{pct(scenario.confidence)}</strong>
-            </div>
-            <div>
-              <small>Selected source</small>
-              <strong>{selectedEvidence?.source ?? selectedSource ?? "None"}</strong>
-            </div>
-          </div>
-        </div>
-        <div className="hero-status">
-          <AlertTriangle size={22} />
-          <span>{severityLabels[highestZone.severity]}</span>
-          <p>{highestZone.rationale}</p>
-        </div>
-      </section>
+      {/* ── WORKSPACE ── */}
+      <main className="workspace">
 
-      <section className="feed-strip">
-        <GazeboFeedPanel />
-        <LiveJobTicker
-          onScenarioUpdate={(s) => { setScenario(s); setBackend("online"); }}
-          onRegister={(fn) => { watchJobRef.current = fn; }}
-        />
-      </section>
-
-      <section className="workspace">
-        <div className="left-column">
-          <VoiceChannelPanel
-            onVoiceIncident={handleVoiceIncident}
-            onRunVoiceTest={handleVoiceTest}
-            playbackStates={voicePlaybackStates}
-            processing={processing}
-          />
-          <EvidenceRail evidence={scenario.evidence} selectedSource={selectedSource} onSelect={setSelectedSource} />
-          <SourcePreview scenario={scenario} selectedSource={selectedSource} />
-          <LiveIngestPanel
-            onIngest={handleIngest}
-            onIngestUpload={handleIngestUpload}
-            processing={processing}
-            progress={ingestProgress}
+        {/* LEFT — Feeds + Ticker */}
+        <div className="col">
+          <FeedPanel />
+          <PipelineTicker
+            onScenarioUpdate={s => { handleScenarioUpdate(s); setProcessing(false); }}
+            watchFnRef={watchFnRef}
           />
         </div>
-        <OrbitalMap scenario={scenario} selectedSource={selectedSource} />
-        <div className="right-column">
-          <ActionStack scenario={scenario} selectedSource={selectedSource} onSelect={setSelectedSource} />
-          <UncertaintyLedger issues={scenario.uncertainties} onSelect={setSelectedSource} />
-        </div>
-      </section>
 
-      <section className="lower-grid">
-        <BriefPanel scenario={scenario} onSelect={setSelectedSource} />
-        <section className="panel flow-panel">
-          <div className="panel-title">
-            <GitBranch size={18} />
-            <span>Inference Flow</span>
-          </div>
-          <div className="flow-steps">
-            <span>Gazebo cameras</span>
-            <span>frame_sampler node</span>
-            <span>Qwen-VL · MI300X</span>
-            <span>Schema validation</span>
-            <span>Evidence graph</span>
-            <span>Candidate plan</span>
-          </div>
-        </section>
-        <SensorTrendPanel scenario={scenario} />
-        <section className="panel clock-panel">
-          <div className="panel-title">
-            <Clock3 size={18} />
-            <span>Decision</span>
-          </div>
-          <p>
-            Source-linked decision support for critical infrastructure operators.
-            Every observation traces back to a Gazebo camera keyframe parsed by
-            Qwen2.5-VL on AMD MI300X.
-          </p>
-        </section>
-        <GpuTelemetry scenario={scenario} />
-      </section>
-    </main>
+        {/* CENTER — Incident + Map + GPU */}
+        <div className="col">
+          <IncidentHeader scenario={scenario} />
+          <TacticalMap    scenario={scenario} />
+          <GpuBar         scenario={scenario} />
+        </div>
+
+        {/* RIGHT — Voice + Evidence + Actions + Uncertainty */}
+        <div className="col">
+          <VoiceChannel watchFnRef={watchFnRef} />
+          <EvidenceRail evidence={scenario.evidence} selected={selectedEv} onSelect={setSelectedEv} />
+          <ResponseActions scenario={scenario} />
+          <UncertaintyLedger scenario={scenario} />
+        </div>
+
+      </main>
+    </div>
   );
 }
