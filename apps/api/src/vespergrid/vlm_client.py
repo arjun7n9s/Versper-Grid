@@ -145,7 +145,7 @@ async def parse_evidence(
     if not is_enabled():
         raise VLMClientError("VLLM_BASE_URL is not configured")
 
-    base_url = _env("VLLM_BASE_URL", "").rstrip("/")
+    base_url = _env("VLLM_BASE_URL", "").rstrip("/").removesuffix("/v1")
     model = _env("VLLM_MODEL", "Qwen/Qwen2.5-VL-7B-Instruct")
     api_key = _env("VLLM_API_KEY", "vespergrid-local")
     timeout = float(_env("VLLM_TIMEOUT_SECONDS", "90"))
