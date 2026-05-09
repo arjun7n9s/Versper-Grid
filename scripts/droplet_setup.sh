@@ -225,14 +225,18 @@ Requires=vespergrid-gazebo.service
 [Service]
 User=root
 Environment=DISPLAY=:99
-ExecStart=/bin/bash -c 'source /opt/ros/jazzy/setup.bash && source /opt/vespergrid/ros2_temp/install/setup.bash && ros2 run ros_gz_bridge parameter_bridge \
+ExecStart=/bin/bash -c "source /opt/ros/jazzy/setup.bash && source /opt/vespergrid/ros2_temp/install/setup.bash && ros2 run ros_gz_bridge parameter_bridge \
   /world/lng_terminal/model/cctv_south/link/cam_sensor_link/sensor/cctv_south_cam/image@sensor_msgs/msg/Image[gz.msgs.Image \
-  /world/lng_terminal/model/drone_d1/link/base_link/sensor/drone_cam/image@sensor_msgs/msg/Image[gz.msgs.Image \
   /world/lng_terminal/model/cctv_gate/link/cam_sensor_link/sensor/cctv_gate_cam/image@sensor_msgs/msg/Image[gz.msgs.Image \
+  /world/lng_terminal/model/drone_d1/link/base_link/sensor/drone_cam/image@sensor_msgs/msg/Image[gz.msgs.Image \
+  /world/lng_terminal/model/drone_d1/link/base_link/sensor/drone_cam_wide/image@sensor_msgs/msg/Image[gz.msgs.Image \
+  /world/lng_terminal/model/drone_d1/link/base_link/sensor/drone_cam_track/image@sensor_msgs/msg/Image[gz.msgs.Image \
   --ros-args \
     -r /world/lng_terminal/model/cctv_south/link/cam_sensor_link/sensor/cctv_south_cam/image:=/cctv_south/image_raw \
+    -r /world/lng_terminal/model/cctv_gate/link/cam_sensor_link/sensor/cctv_gate_cam/image:=/cctv_gate/image_raw \
     -r /world/lng_terminal/model/drone_d1/link/base_link/sensor/drone_cam/image:=/drone_d1/image_raw \
-    -r /world/lng_terminal/model/cctv_gate/link/cam_sensor_link/sensor/cctv_gate_cam/image:=/cctv_gate/image_raw'
+    -r /world/lng_terminal/model/drone_d1/link/base_link/sensor/drone_cam_wide/image:=/drone_d1/image_wide \
+    -r /world/lng_terminal/model/drone_d1/link/base_link/sensor/drone_cam_track/image:=/drone_d1/image_track"
 Restart=always
 RestartSec=10
 
