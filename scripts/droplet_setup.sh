@@ -32,7 +32,7 @@ set -euo pipefail
 
 REPO_URL="https://github.com/arjun7n9s/Versper-Grid.git"
 INSTALL_DIR="/opt/vespergrid"
-VENV="$INSTALL_DIR/vespergrid-venv"
+VENV="/opt/vespergrid-venv"
 ROS_DISTRO="jazzy"
 SAMPLER_SCRIPT="$INSTALL_DIR/ros2_temp/install/lng_terminal_world/lib/lng_terminal_world/frame_sampler.py"
 SDF="$INSTALL_DIR/ros2_temp/install/lng_terminal_world/share/lng_terminal_world/worlds/lng_terminal.sdf"
@@ -86,7 +86,7 @@ python3 -m venv "$VENV"
 "$VENV/bin/pip" install --upgrade pip
 "$VENV/bin/pip" install \
   fastapi "uvicorn[standard]" python-multipart aiofiles \
-  pillow httpx requests openai pydantic
+  pillow httpx requests openai pydantic faster-whisper
 
 echo "===== [6/11] Build ROS2 package ====="
 source /opt/ros/$ROS_DISTRO/setup.bash
@@ -279,7 +279,10 @@ WorkingDirectory=/opt/vespergrid/apps/api
 Environment=PYTHONUNBUFFERED=1
 Environment=VLLM_BASE_URL=http://localhost:8000/v1
 Environment=VLLM_MODEL=/shared-docker/Qwen2.5-VL-7B-Instruct
-ExecStart=/opt/vespergrid/vespergrid-venv/bin/uvicorn vespergrid.main:app --host 0.0.0.0 --port 8742 --workers 2
+Environment=STT_MODEL=base.en
+Environment=STT_DEVICE=cpu
+Environment=STT_COMPUTE_TYPE=int8
+ExecStart=/opt/vespergrid-venv/bin/uvicorn vespergrid.main:app --host 0.0.0.0 --port 8742 --workers 2
 Restart=always
 RestartSec=5
 
@@ -296,7 +299,7 @@ After=vespergrid-api.service
 [Service]
 User=root
 Environment=VESPER_API_URL=http://localhost:8742/api
-ExecStart=/opt/vespergrid/vespergrid-venv/bin/python3 /opt/vespergrid/scripts/gen_frames.py
+ExecStart=/opt/vespergrid-venv/bin/python3 /opt/vespergrid/scripts/gen_frames.py
 Restart=always
 RestartSec=20
 
