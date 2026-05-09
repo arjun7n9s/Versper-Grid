@@ -105,7 +105,30 @@ into the VLM context as "historical precedent".
 
 ---
 
-## 5. Evacuation Zone Geometry on Orbital Map (Medium Impact)
+## 5. Structured Output Validator Agent (Medium Impact — Easy Win)
+
+### Concept
+After the VLM returns a `VLMObservationsBundle`, a second lightweight LLM call
+re-reads the output and checks for internal inconsistencies before it reaches the UI:
+- `confidence=0.97` but zero `Hazard` evidence items → reject and retry
+- `severity=critical` but `response_actions` list is empty → flag and fill
+- Evidence items reference a zone not present in `risk_zones` → auto-correct
+
+Reuses the same Qwen2.5-VL endpoint (cheap text-only call, ~0.2s).
+
+### Implementation
+- After `parse_evidence()` in `vlm_client.py`, run a second call with:
+  > "Review this JSON scenario for logical consistency. Return 'ok' or a corrected JSON."
+- Max 1 retry. If still inconsistent, fall back to deterministic engine.
+- Adds a self-healing layer — no bad data ever reaches the dashboard.
+
+### Files to touch
+- `apps/api/src/vespergrid/vlm_client.py` — add `validate_observations()` post-step
+- `apps/api/src/vespergrid/ingest.py` — call validator after `parse_evidence()`
+
+---
+
+## 6. Evacuation Zone Geometry on Orbital Map (Medium Impact)
 
 ### Concept
 Given gas source coords + wind vector from sensor trace, compute ISO 15926 PAC
@@ -121,7 +144,8 @@ Pure geometry — no new model needed.
 
 ## Priority Order (if time allows)
 1. Cross-camera prompt upgrade (~30 min, zero risk)
-2. Emergency broadcast loop (~3 hrs, highest demo impact)
-3. Sensor anomaly detection (~2 hrs, adds AI modality)
-4. Evacuation zone geometry (~2 hrs, visual impact)
-5. RAG incident memory (~4 hrs, most complex)
+2. Structured output validator agent (~1 hr, self-healing pipeline)
+3. Emergency broadcast loop (~3 hrs, highest demo impact)
+4. Sensor anomaly detection (~2 hrs, adds AI modality)
+5. Evacuation zone geometry (~2 hrs, visual impact)
+6. RAG incident memory (~4 hrs, most complex)
