@@ -1,18 +1,17 @@
-// DroneAnimator — Gazebo system plugin that runs inside the sim loop (1 kHz)
-// and smoothly animates drone_d1 / drone_d2 / drone_d3 via direct ECM writes.
-// Zero subprocess / network overhead → smooth 1000 Hz motion.
+// DroneAnimator — Gazebo Harmonic (gz-sim8) system plugin
+// Animates drone_d1/d2/d3 via direct ECM writes at sim rate.
 
-#include <ignition/gazebo/System.hh>
-#include <ignition/gazebo/Model.hh>
-#include <ignition/gazebo/Util.hh>
-#include <ignition/gazebo/components/Pose.hh>
-#include <ignition/gazebo/components/Name.hh>
-#include <ignition/gazebo/components/Model.hh>
-#include <ignition/plugin/Register.hh>
-#include <ignition/math/Pose3.hh>
-#include <ignition/math/Vector3.hh>
-#include <ignition/math/Quaternion.hh>
-#include <ignition/common/Console.hh>
+#include <gz/sim/System.hh>
+#include <gz/sim/Model.hh>
+#include <gz/sim/Util.hh>
+#include <gz/sim/components/Pose.hh>
+#include <gz/sim/components/Name.hh>
+#include <gz/sim/components/Model.hh>
+#include <gz/plugin/Register.hh>
+#include <gz/math/Pose3.hh>
+#include <gz/math/Vector3.hh>
+#include <gz/math/Quaternion.hh>
+#include <gz/common/Console.hh>
 
 #include <cmath>
 #include <random>
@@ -21,54 +20,52 @@
 namespace vesper
 {
 class DroneAnimator :
-  public ignition::gazebo::System,
-  public ignition::gazebo::ISystemConfigure,
-  public ignition::gazebo::ISystemPreUpdate
+  public gz::sim::System,
+  public gz::sim::ISystemConfigure,
+  public gz::sim::ISystemPreUpdate
 {
 public:
-  void Configure(const ignition::gazebo::Entity &/*_entity*/,
-                 const std::shared_ptr<const sdf::Element> &/*_sdf*/,
-                 ignition::gazebo::EntityComponentManager &/*_ecm*/,
-                 ignition::gazebo::EventManager &/*_eventMgr*/) override
+  void Configure(const gz::sim::Entity &,
+                 const std::shared_ptr<const sdf::Element> &,
+                 gz::sim::EntityComponentManager &,
+                 gz::sim::EventManager &) override
   {
     rng_.seed(std::random_device{}());
     PickNewD3Target();
-    igndbg << "[DroneAnimator] configured" << std::endl;
+    gzdbg << "[DroneAnimator] configured" << std::endl;
   }
 
-  void PreUpdate(const ignition::gazebo::UpdateInfo &_info,
-                 ignition::gazebo::EntityComponentManager &_ecm) override
+  void PreUpdate(const gz::sim::UpdateInfo &_info,
+                 gz::sim::EntityComponentManager &_ecm) override
   {
     if (_info.paused) return;
-    const double t = std::chrono::duration<double>(_info.simTime).count();
+    const double t  = std::chrono::duration<double>(_info.simTime).count();
     const double dt = std::chrono::duration<double>(_info.dt).count();
 
-    // Resolve drone model entities once (cache)
-    if (d1_ == ignition::gazebo::kNullEntity) {
-      d1_ = _ecm.EntityByComponents(ignition::gazebo::components::Name("drone_d1"),
-                                     ignition::gazebo::components::Model());
-      d2_ = _ecm.EntityByComponents(ignition::gazebo::components::Name("drone_d2"),
-                                     ignition::gazebo::components::Model());
-      d3_ = _ecm.EntityByComponents(ignition::gazebo::components::Name("drone_d3"),
-                                     ignition::gazebo::components::Model());
-      if (d1_ == ignition::gazebo::kNullEntity) return;
-      ignmsg << "[DroneAnimator] entities resolved d1=" << d1_
-             << " d2=" << d2_ << " d3=" << d3_ << std::endl;
+    if (d1_ == gz::sim::kNullEntity) {
+      d1_ = _ecm.EntityByComponents(gz::sim::components::Name("drone_d1"),
+                                    gz::sim::components::Model());
+      d2_ = _ecm.EntityByComponents(gz::sim::components::Name("drone_d2"),
+                                    gz::sim::components::Model());
+      d3_ = _ecm.EntityByComponents(gz::sim::components::Name("drone_d3"),
+                                    gz::sim::components::Model());
+      if (d1_ == gz::sim::kNullEntity) return;
+      gzmsg << "[DroneAnimator] entities resolved d1=" << d1_
+            << " d2=" << d2_ << " d3=" << d3_ << std::endl;
     }
 
-    // ── D-1: hover with gentle bob + vertical micro-jitter for beacon blink
+    // D-1: hover with gentle bob
     {
-      const bool blink = (static_cast<int>(t * 2.0)) % 2 == 0;
-      const double bob = 0.25 * std::sin(t * 1.2);
-      const double jitter = blink ? 0.04 : -0.04;
-      const double x = 72.0 + 0.4 * std::sin(t * 0.3);
-      const double y = -50.0 + 0.4 * std::cos(t * 0.3);
-      const double z = 18.0 + bob + jitter;
-      const double yaw = -2.4 + 0.05 * std::sin(t * 0.5);
-      SetPose(_ecm, d1_, x, y, z, yaw);
+      const double bob    = 0.25 * std::sin(t * 1.2);
+      const double jitter = ((static_cast<int>(t * 2.0)) % 2 == 0) ? 0.04 : -0.04;
+      SetPose(_ecm, d1_,
+              72.0 + 0.4 * std::sin(t * 0.3),
+              -50.0 + 0.4 * std::cos(t * 0.3),
+              18.0 + bob + jitter,
+              -2.4 + 0.05 * std::sin(t * 0.5));
     }
 
-    // ── D-2: takeoff → patrol → land → idle, looped
+    // D-2: takeoff → patrol → land → idle
     {
       d2_phase_t_ += dt;
       double x=0, y=10, z=0.18, yaw=0.4;
@@ -102,18 +99,16 @@ public:
       SetPose(_ecm, d2_, x, y, z, yaw);
     }
 
-    // ── D-3: smooth random walk in Sector 2
+    // D-3: smooth random walk
     {
-      const double dx = d3_tgt_.X() - d3_pos_.X();
-      const double dy = d3_tgt_.Y() - d3_pos_.Y();
-      const double dz = d3_tgt_.Z() - d3_pos_.Z();
+      const double dx   = d3_tgt_.X() - d3_pos_.X();
+      const double dy   = d3_tgt_.Y() - d3_pos_.Y();
+      const double dz   = d3_tgt_.Z() - d3_pos_.Z();
       const double dist = std::sqrt(dx*dx + dy*dy + dz*dz);
       if (dist < 3.0) {
         PickNewD3Target();
       } else {
-        const double speed = 5.0;
-        const double step = speed * dt;
-        const double f = std::min(1.0, step / dist);
+        const double f = std::min(1.0, 5.0 * dt / dist);
         d3_pos_.X() += dx * f;
         d3_pos_.Y() += dy * f;
         d3_pos_.Z() += dz * f;
@@ -126,53 +121,46 @@ public:
 private:
   enum class Phase { Takeoff, Patrol, Land, Idle };
 
-  void PickNewD3Target()
-  {
-    std::uniform_real_distribution<double> dx(-80, 80), dy(-80, 80), dz(22, 32);
-    d3_tgt_ = ignition::math::Vector3d(440.0 + dx(rng_), 30.0 + dy(rng_), dz(rng_));
+  void PickNewD3Target() {
+    std::uniform_real_distribution<double> dx(-80,80), dy(-80,80), dz(22,32);
+    d3_tgt_ = gz::math::Vector3d(440.0 + dx(rng_), 30.0 + dy(rng_), dz(rng_));
   }
 
-  static double Smoothstep(double t)
-  {
-    return t * t * (3.0 - 2.0 * t);
-  }
+  static double Smoothstep(double t) { return t * t * (3.0 - 2.0 * t); }
 
-  void SetPose(ignition::gazebo::EntityComponentManager &_ecm,
-               ignition::gazebo::Entity _ent,
+  void SetPose(gz::sim::EntityComponentManager &_ecm,
+               gz::sim::Entity _ent,
                double _x, double _y, double _z, double _yaw)
   {
-    if (_ent == ignition::gazebo::kNullEntity) return;
-    ignition::math::Pose3d pose(
-      _x, _y, _z,
-      0, 0, _yaw);
-    auto *comp = _ecm.Component<ignition::gazebo::components::Pose>(_ent);
+    if (_ent == gz::sim::kNullEntity) return;
+    gz::math::Pose3d pose(_x, _y, _z, 0, 0, _yaw);
+    auto *comp = _ecm.Component<gz::sim::components::Pose>(_ent);
     if (comp) {
-      *comp = ignition::gazebo::components::Pose(pose);
-      _ecm.SetChanged(_ent,
-                      ignition::gazebo::components::Pose::typeId,
-                      ignition::gazebo::ComponentState::OneTimeChange);
+      *comp = gz::sim::components::Pose(pose);
+      _ecm.SetChanged(_ent, gz::sim::components::Pose::typeId,
+                      gz::sim::ComponentState::OneTimeChange);
     } else {
-      _ecm.CreateComponent(_ent, ignition::gazebo::components::Pose(pose));
+      _ecm.CreateComponent(_ent, gz::sim::components::Pose(pose));
     }
   }
 
-  ignition::gazebo::Entity d1_{ignition::gazebo::kNullEntity};
-  ignition::gazebo::Entity d2_{ignition::gazebo::kNullEntity};
-  ignition::gazebo::Entity d3_{ignition::gazebo::kNullEntity};
+  gz::sim::Entity d1_{gz::sim::kNullEntity};
+  gz::sim::Entity d2_{gz::sim::kNullEntity};
+  gz::sim::Entity d3_{gz::sim::kNullEntity};
 
-  Phase d2_phase_{Phase::Takeoff};
+  Phase  d2_phase_{Phase::Takeoff};
   double d2_phase_t_{0.0};
 
-  ignition::math::Vector3d d3_pos_{440.0, 30.0, 25.0};
-  ignition::math::Vector3d d3_tgt_{440.0, 30.0, 25.0};
+  gz::math::Vector3d d3_pos_{440.0, 30.0, 25.0};
+  gz::math::Vector3d d3_tgt_{440.0, 30.0, 25.0};
   double d3_yaw_{1.2};
 
   std::mt19937 rng_;
 };
 }  // namespace vesper
 
-IGNITION_ADD_PLUGIN(vesper::DroneAnimator,
-                    ignition::gazebo::System,
-                    vesper::DroneAnimator::ISystemConfigure,
-                    vesper::DroneAnimator::ISystemPreUpdate)
-IGNITION_ADD_PLUGIN_ALIAS(vesper::DroneAnimator, "vesper::DroneAnimator")
+GZ_ADD_PLUGIN(vesper::DroneAnimator,
+              gz::sim::System,
+              vesper::DroneAnimator::ISystemConfigure,
+              vesper::DroneAnimator::ISystemPreUpdate)
+GZ_ADD_PLUGIN_ALIAS(vesper::DroneAnimator, "vesper::DroneAnimator")

@@ -6,18 +6,18 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 
 find_package(ament_cmake REQUIRED)
-find_package(ignition-cmake2 REQUIRED)
-find_package(ignition-plugin1 REQUIRED COMPONENTS register)
-find_package(ignition-gazebo6 REQUIRED)
-find_package(ignition-math6 REQUIRED)
-find_package(ignition-common4 REQUIRED)
+find_package(gz-cmake3 REQUIRED)
+find_package(gz-plugin2 REQUIRED COMPONENTS register)
+find_package(gz-sim8 REQUIRED)
+find_package(gz-math7 REQUIRED)
+find_package(gz-common5 REQUIRED)
 
 add_library(DroneAnimator SHARED plugins/DroneAnimator.cc)
 target_link_libraries(DroneAnimator
-  ignition-gazebo6::ignition-gazebo6
-  ignition-plugin1::register
-  ignition-math6::ignition-math6
-  ignition-common4::ignition-common4
+  gz-sim8::gz-sim8
+  gz-plugin2::register
+  gz-math7::gz-math7
+  gz-common5::gz-common5
 )
 
 install(TARGETS DroneAnimator
