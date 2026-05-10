@@ -22,6 +22,8 @@
 
 ---
 
+> **Note on Repository History:** This project was originally started at [arjun7n9s/VesperGrid](https://github.com/arjun7n9s/VesperGrid). We migrated to this new repository because we needed to switch our base operating system to fully support ROS 2, Gazebo simulation, and the advanced robotics middleware required for this iteration of the project.
+
 ## ⚡ The Vision
 
 Industrial operators face a chaotic influx of signals during high-pressure incidents: drone frames, fixed-camera footage, sensor readings, radio notes, and partial field reports. The hard part is not getting a chatbot summary—the hard part is tracing **which evidence supports which decision**, understanding where the uncertainty lives, and acting confidently under time pressure.
