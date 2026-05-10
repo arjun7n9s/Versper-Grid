@@ -89,51 +89,57 @@ VesperGrid's architecture is designed to capture live physical data, funnel it t
 ```mermaid
 graph TD
     subgraph Sim ["Gazebo / ROS 2 — Physical Layer"]
-        D[Drone D-1/D-2 Cameras]
-        C[CCTV South + Gate]
-        S[Gas & Wind Sensors]
-        V[Voice / Radio Comms]
-        DA[DroneAnimator C++ Plugin]
-        GF[gen_frames.py]
+        D["Drone D-1/D-2 Cameras"]
+        C["CCTV South + Gate"]
+        S["Gas & Wind Sensors"]
+        V["Voice / Radio Comms"]
+        DA["DroneAnimator C++ Plugin"]
+        GF["gen_frames.py"]
         DA --> GF
-        D & C --> GF
+        D --> GF
+        C --> GF
     end
 
     subgraph API ["FastAPI Backend"]
-        I[POST /ingest/upload]
-        STT[STT · Whisper]
-        SA[sensor_analysis.py\nIsolationForest + PAC cone]
-        RAG[memory.py\nChromaDB + MiniLM-L6]
-        ENG[engine.py\nScenario synthesis]
-        VAL[Validator · 3-rule self-heal]
-        BC[broadcast.py\nLLM PA script + TTS]
-        SSE[SSE Stream]
+        I["POST /ingest/upload"]
+        STT["STT · Whisper"]
+        SA["sensor_analysis.py<br/>IsolationForest + PAC cone"]
+        RAG["memory.py<br/>ChromaDB + MiniLM-L6"]
+        ENG["engine.py<br/>Scenario synthesis"]
+        VAL["Validator · 3-rule self-heal"]
+        BC["broadcast.py<br/>LLM PA script + TTS"]
+        SSE["SSE Stream"]
     end
 
     subgraph Cloud ["AMD MI300X · 192 GB VRAM"]
-        ROCM[ROCm 7.2.0]
-        VLLM[vLLM Engine]
-        QWEN[Qwen2.5-VL]
+        ROCM["ROCm 7.2.0"]
+        VLLM["vLLM Engine"]
+        QWEN["Qwen2.5-VL"]
         ROCM --> VLLM --> QWEN
     end
 
     subgraph UI ["React 19 Operations Console"]
-        DASH[Incident Brief + Evidence Rail]
-        MAP[Zone Map SVG · PAC cone]
-        LED[Uncertainty Ledger]
-        BCAST[Broadcast Toast + Audio]
+        DASH["Incident Brief + Evidence Rail"]
+        MAP["Zone Map SVG · PAC cone"]
+        LED["Uncertainty Ledger"]
+        BCAST["Broadcast Toast + Audio"]
     end
 
     GF --> I
     S --> SA
-    V --> STT --> I
+    V --> STT
+    STT --> I
     I --> QWEN
     SA --> ENG
-    RAG -.->|top-2 precedents| QWEN
+    RAG -.->|"top-2 precedents"| QWEN
     QWEN --> ENG
-    ENG --> VAL --> SSE
-    ENG --> BC --> BCAST
-    SSE --> DASH & MAP & LED
+    ENG --> VAL
+    VAL --> SSE
+    ENG --> BC
+    BC --> BCAST
+    SSE --> DASH
+    SSE --> MAP
+    SSE --> LED
 ```
 
 ### Directory Structure
@@ -153,11 +159,9 @@ AMD-S-2/
 ├── ros2/
 │   ├── evidence_bridge/     # ROS 2 nodes bridging Gazebo → REST API
 │   └── lng_terminal_world/  # Gazebo world, SDF models, DroneAnimator plugin
-├── scripts/
-│   ├── gen_frames.py        # Synthetic frame + sensor trace generator
-│   └── vesper_e2e.py        # End-to-end integration test suite
-└── docs/
-    └── architecture.png     # Full system architecture diagram
+└── scripts/
+    ├── gen_frames.py        # Synthetic frame + sensor trace generator
+    └── vesper_e2e.py        # End-to-end integration test suite
 ```
 
 ---

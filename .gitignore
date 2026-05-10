@@ -25,6 +25,11 @@ expert_review.md
 docs/codex_push_working_notes.md
 docs/github_push_plan.md
 docs/expert_response_synthesis.md
+master_upgrade.md
+last_min_plans.md
+claude-design.zip
+claude-design-extracted/
+readme/
 
 # Local PDF/extraction artifacts (not part of the project)
 .amd_pdf_pages/
