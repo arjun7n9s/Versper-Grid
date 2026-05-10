@@ -354,6 +354,14 @@ function EvidenceRail({ evidence }: { evidence: EvidenceItem[] }) {
                 <div className="ev-main">
                   <div className="ev-source">{ev.source}</div>
                   <div className="ev-summary">{ev.summary}</div>
+                  {selected===ev.id&&ev.assetUrl&&ev.kind==="image"&&(
+                    <img
+                      src={`${API_BASE}${ev.assetUrl}?t=${Date.now()}`}
+                      alt={ev.source}
+                      className="ev-thumb"
+                      onError={e=>{(e.target as HTMLImageElement).style.display="none"}}
+                    />
+                  )}
                   {selected===ev.id&&ev.transcript&&(
                     <div className="ev-transcript">"{ev.transcript}"</div>
                   )}

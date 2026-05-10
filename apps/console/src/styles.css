@@ -635,6 +635,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-rad
 .bcast-icon{flex-shrink:0;color:var(--amber)}
 .bcast-body{flex:1;min-width:0}
 .bcast-title{font-size:12px;font-weight:700;color:var(--amber)}
+.ev-thumb{display:block;width:100%;max-height:120px;object-fit:cover;border-radius:3px;margin-top:6px;border:1px solid var(--border)}
 .bcast-script{font-size:10px;color:var(--t1);margin-top:5px;line-height:1.5;max-width:420px;white-space:pre-wrap}
 .bcast-err{font-size:10px;color:var(--red);margin-top:4px}
 .bcast-close{margin-left:auto;color:var(--t3);flex-shrink:0;align-self:flex-start}

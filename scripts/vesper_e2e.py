@@ -10,7 +10,7 @@ Runs the full pipeline automatically:
   6. Prints a summary report with pass/fail for each step
 
 Usage:
-  python3 scripts/vesper_e2e.py [--api http://165.245.143.11] [--screenshots]
+  python3 scripts/vesper_e2e.py [--api http://localhost:8742] [--screenshots]
 
 Deps (cloud): pip install playwright httpx Pillow && playwright install chromium
 """
@@ -277,7 +277,7 @@ async def step_jobs_list(client: httpx.AsyncClient, api: str) -> None:
 
 async def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--api",         default="http://165.245.143.11")
+    parser.add_argument("--api",         default="http://localhost:8742")
     parser.add_argument("--screenshots", action="store_true", default=True)
     parser.add_argument("--skip-vlm",    action="store_true")
     args = parser.parse_args()

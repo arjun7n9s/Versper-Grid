@@ -265,10 +265,16 @@ def run():
                 },
                 timeout=30,
             )
-            j = r.json()
-            print(f'[{time.strftime("%H:%M:%S")}] bundle #{i}  job={j["job_id"]}  backend={j["backend"]}')
+            if r.status_code == 200:
+                try:
+                    j = r.json()
+                    print(f'[{time.strftime("%H:%M:%S")}] bundle #{i}  job={j["job_id"]}  backend={j["backend"]}')
+                except Exception:
+                    print(f'[{time.strftime("%H:%M:%S")}] bundle #{i}  posted (non-JSON response, API may be restarting)')
+            else:
+                print(f'[{time.strftime("%H:%M:%S")}] bundle #{i}  HTTP {r.status_code}')
         except Exception as e:
-            print(f'[{time.strftime("%H:%M:%S")}] ERROR: {e}')
+            print(f'[{time.strftime("%H:%M:%S")}] ERROR: {e} — will retry in {INTERVAL}s')
         i += 1
         time.sleep(INTERVAL)
 

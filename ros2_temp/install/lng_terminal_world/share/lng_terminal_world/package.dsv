@@ -1,8 +1,0 @@
-source;share/lng_terminal_world/hook/cmake_prefix_path.ps1
-source;share/lng_terminal_world/hook/cmake_prefix_path.dsv
-source;share/lng_terminal_world/hook/cmake_prefix_path.sh
-source;share/lng_terminal_world/local_setup.bash
-source;share/lng_terminal_world/local_setup.dsv
-source;share/lng_terminal_world/local_setup.ps1
-source;share/lng_terminal_world/local_setup.sh
-source;share/lng_terminal_world/local_setup.zsh

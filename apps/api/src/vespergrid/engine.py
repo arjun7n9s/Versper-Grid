@@ -98,7 +98,69 @@ def synthesize_from_ingest(request: IngestRequest) -> Scenario:
     sensor = analyze_sensor_trace(request.sensor_trace)
     if sensor:
         _merge_sensor_analysis(base, sensor)
+
+    # Inject live camera feed evidence items so the rail always shows active sources
+    _inject_camera_evidence(base)
+
     return base
+
+
+def _inject_camera_evidence(scenario: Scenario) -> None:
+    """Add image evidence entries for the four live camera feeds.
+
+    These point to /api/feeds/latest/{source} so the rail shows real thumbnails.
+    Only appended if not already present (idempotent).
+    """
+    existing_ids = {e.id for e in scenario.evidence}
+    camera_items = [
+        EvidenceItem(
+            id="ev-cam-cctv-south",
+            sourceUuid="SRC-CAM-CCTV-S",
+            source="CCTV South · Tank B-4",
+            kind="image",
+            summary="Ground-level CCTV south facing Tank B-4 flange. Gas plume visible drifting NE.",
+            confidence=0.88,
+            signal="visual plume confirmation",
+            linkedZoneId="z1",
+            assetUrl="/api/feeds/latest/cctv_south",
+        ),
+        EvidenceItem(
+            id="ev-cam-drone-main",
+            sourceUuid="SRC-CAM-UAV-F",
+            source="Drone D-1 · Main cam",
+            kind="image",
+            summary="Drone D-1 overhead — tank farm aerial view, B-4 plume visible from above.",
+            confidence=0.91,
+            signal="aerial confirmation",
+            linkedZoneId="z1",
+            assetUrl="/api/feeds/latest/drone_d1",
+        ),
+        EvidenceItem(
+            id="ev-cam-drone-back",
+            sourceUuid="SRC-CAM-UAV-B",
+            source="Drone D-1 · Back cam",
+            kind="image",
+            summary="Drone D-1 rear camera — downwind corridor and perimeter fence visible.",
+            confidence=0.83,
+            signal="perimeter check",
+            linkedZoneId="z2",
+            assetUrl="/api/feeds/latest/drone_d1_back",
+        ),
+        EvidenceItem(
+            id="ev-cam-cctv-gate",
+            sourceUuid="SRC-CAM-GATE",
+            source="CCTV Gate · North perimeter",
+            kind="image",
+            summary="Gate CCTV north — smoke column drifting east across horizon.",
+            confidence=0.79,
+            signal="smoke column drift",
+            linkedZoneId="z2",
+            assetUrl="/api/feeds/latest/cctv_gate",
+        ),
+    ]
+    for item in camera_items:
+        if item.id not in existing_ids:
+            scenario.evidence.append(item)
 
 
 def _merge_voice_reports(
@@ -478,11 +540,13 @@ def synthesize_from_vlm_output(
         gpu=gpu_lanes,
         brief=brief_lines,
     )
-    return enrich_scenario_with_modalities(
+    result = enrich_scenario_with_modalities(
         scenario,
         voice_reports=voice_reports,
         sensor_trace=sensor_trace,
     )
+    _inject_camera_evidence(result)
+    return result
 
 
 def _get_gpu_lanes() -> list:

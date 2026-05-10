@@ -6,7 +6,7 @@ keyframe bundle every SAMPLE_INTERVAL_S seconds, then POSTs the frames as
 multipart form data to POST /api/ingest/upload on the VesperGrid cloud API.
 
 Environment variables (all optional — sensible defaults for local dev):
-  VESPER_API_URL          e.g. http://165.245.143.11/api   (no trailing slash)
+  VESPER_API_URL          e.g. http://localhost:8742/api   (no trailing slash)
   SAMPLE_INTERVAL_S       seconds between bundles           default: 10
   MAX_FRAMES_PER_BUNDLE   max frames sent per POST          default: 5
   JPEG_QUALITY            0-95                              default: 75
@@ -39,7 +39,7 @@ logging.basicConfig(
     format="%(asctime)s [frame_sampler] %(levelname)s %(message)s",
 )
 
-_API_URL = os.environ.get("VESPER_API_URL", "http://165.245.143.11/api").rstrip("/")
+_API_URL = os.environ.get("VESPER_API_URL", "http://localhost:8742/api").rstrip("/")
 _SAMPLE_INTERVAL = float(os.environ.get("SAMPLE_INTERVAL_S", "10"))
 _MAX_FRAMES = int(os.environ.get("MAX_FRAMES_PER_BUNDLE", "5"))
 _JPEG_QUALITY = int(os.environ.get("JPEG_QUALITY", "75"))
