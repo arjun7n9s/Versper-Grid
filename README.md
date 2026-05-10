@@ -136,10 +136,6 @@ graph TD
     SSE --> DASH & MAP & LED
 ```
 
-### Architecture Diagram
-
-![VesperGrid System Architecture](docs/architecture.png)
-
 ### Directory Structure
 
 ```text
