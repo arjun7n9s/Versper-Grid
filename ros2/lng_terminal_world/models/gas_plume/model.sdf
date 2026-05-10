@@ -5,106 +5,111 @@
     <!-- Base link at origin -->
     <link name="plume_link">
       <pose>0 0 0 0 0 0</pose>
-      
-      <!-- Phase 0: The Fluff (Covers the emission point) -->
-      <particle_emitter name="plume_fluff" type="box">
-        <!-- Near origin, perfectly vertical but very slow -->
-        <pose>0 0 0.5 0 -1.5707 0</pose>
-        <emitting>true</emitting>
-        <size>0.4 0.4 0</size>
-        <particle_size>0.5 0.5 0.5</particle_size>
-        <lifetime>1.5</lifetime>
-        <!-- Very low velocity so it just hovers and expands -->
-        <min_velocity>0.2</min_velocity>
-        <max_velocity>0.8</max_velocity>
-        <scale_rate>0.6</scale_rate>
-        <rate>15</rate>
-        <!-- Very transparent so it doesn't create bright spots -->
-        <color_start>0.85 0.88 0.85 0.05</color_start>
-        <color_end>0.85 0.88 0.85 0.0</color_end>
-        <!-- High scatter so it's a messy puff around the flange -->
-        <particle_scatter_ratio>1.5</particle_scatter_ratio>
-        <material>
-          <diffuse>0.7 0.7 0.7</diffuse><specular>1.0 1.0 1.0</specular>
-          <pbr><metal><albedo_map>materials/textures/smoke_puff.png</albedo_map></metal></pbr>
-        </material>
-        <color_range_image>materials/textures/smoke_colors.png</color_range_image>
-      </particle_emitter>
 
-      <!-- Phase 1: The Base (Vertical Jet) -->
-      <particle_emitter name="plume_base" type="box">
-        <!-- Straight up -->
-        <pose>0 0 0 0 -1.5707 0</pose>
-        <emitting>true</emitting>
-        <size>0.1 0.1 0</size>
-        <particle_size>0.3 0.3 0.3</particle_size>
-        <!-- Reaches 9.0m high (4.5 * 2.0) -->
-        <lifetime>2.0</lifetime>
-        <min_velocity>4.4</min_velocity>
-        <max_velocity>4.6</max_velocity>
-        <scale_rate>0.8</scale_rate>
-        <!-- End size: 0.3 + (0.8 * 2.0) = 1.9m -->
-        <rate>50</rate>
-        <color_start>0.85 0.88 0.85 0.10</color_start>
-        <color_end>0.85 0.88 0.85 0.06</color_end>
-        <particle_scatter_ratio>0.02</particle_scatter_ratio>
-        <material>
-          <diffuse>0.7 0.7 0.7</diffuse><specular>1.0 1.0 1.0</specular>
-          <pbr><metal><albedo_map>materials/textures/smoke_puff.png</albedo_map></metal></pbr>
-        </material>
-        <color_range_image>materials/textures/smoke_colors.png</color_range_image>
-      </particle_emitter>
+      <!-- ═══ BILLOWING SMOKE COLUMN — layered overlapping spheres ═══
+           Plume world base at (60,-73,4.5). All poses are relative.
+           Spheres increase in size and offset slightly to simulate turbulent rise.
+           Emissive blue-green tint makes them visually distinct from tan/brown tanks.
+      ═══ -->
 
-      <!-- Phase 2: The Bend (Transition - Much Steeper) -->
-      <particle_emitter name="plume_bend" type="box">
-        <!-- Starts at 8.8m high (slight overlap), pitched 68 degrees up (-1.2 rad) -->
-        <pose>0 0 8.8 0 -1.2 0</pose>
-        <emitting>true</emitting>
-        <size>0.5 0.5 0</size>
-        <!-- Start size perfectly matches Base end size (~1.9m) -->
-        <particle_size>1.9 1.9 1.9</particle_size>
-        <!-- Travels 9m diagonally. dx=3.37m, dz=8.34m. Ends at x=3.37, z=17.14 -->
-        <lifetime>3.0</lifetime>
-        <min_velocity>2.9</min_velocity>
-        <max_velocity>3.1</max_velocity>
-        <scale_rate>1.2</scale_rate>
-        <!-- End size: 1.9 + (1.2 * 3.0) = 5.5m -->
-        <rate>40</rate>
-        <!-- Start opacity matches Base end opacity perfectly -->
-        <color_start>0.85 0.88 0.85 0.06</color_start>
-        <color_end>0.85 0.88 0.85 0.03</color_end>
-        <particle_scatter_ratio>0.1</particle_scatter_ratio>
+      <!-- Puff 0: base emission puff at flange level -->
+      <visual name="puff0">
+        <pose>0 0 1.5 0 0 0</pose>
+        <geometry><sphere><radius>1.2</radius></sphere></geometry>
         <material>
-          <diffuse>0.7 0.7 0.7</diffuse><specular>1.0 1.0 1.0</specular>
-          <pbr><metal><albedo_map>materials/textures/smoke_puff.png</albedo_map></metal></pbr>
+          <ambient>0.82 0.90 0.86 1</ambient>
+          <diffuse>0.78 0.88 0.82 1</diffuse>
+          <emissive>0.20 0.32 0.24 1</emissive>
         </material>
-        <color_range_image>materials/textures/smoke_colors.png</color_range_image>
-      </particle_emitter>
+      </visual>
 
-      <!-- Phase 3: The Drift (Wind-blown cloud over the tank) -->
-      <particle_emitter name="plume_drift" type="box">
-        <!-- Starts at x=3.2, z=16.9 (slight overlap). Pitched almost horizontal -->
-        <pose>3.2 0 16.9 0 -0.2 0.2</pose>
-        <emitting>true</emitting>
-        <size>1.5 1.5 0</size>
-        <!-- Start size perfectly matches Bend end size (~5.5m) -->
-        <particle_size>5.5 5.5 5.5</particle_size>
-        <lifetime>8.0</lifetime>
-        <!-- Varied velocity to break up the final cloud naturally -->
-        <min_velocity>1.0</min_velocity>
-        <max_velocity>2.5</max_velocity>
-        <scale_rate>1.5</scale_rate>
-        <rate>25</rate>
-        <!-- Start opacity matches Bend end opacity perfectly -->
-        <color_start>0.85 0.88 0.85 0.03</color_start>
-        <color_end>0.95 0.95 0.98 0.0</color_end>
-        <particle_scatter_ratio>0.6</particle_scatter_ratio>
+      <!-- Puff 1: rising, slightly north -->
+      <visual name="puff1">
+        <pose>-0.4 0.3 4.5 0 0 0</pose>
+        <geometry><sphere><radius>1.6</radius></sphere></geometry>
         <material>
-          <diffuse>0.7 0.7 0.7</diffuse><specular>1.0 1.0 1.0</specular>
-          <pbr><metal><albedo_map>materials/textures/smoke_puff.png</albedo_map></metal></pbr>
+          <ambient>0.84 0.91 0.87 1</ambient>
+          <diffuse>0.80 0.89 0.84 1</diffuse>
+          <emissive>0.18 0.28 0.21 1</emissive>
         </material>
-        <color_range_image>materials/textures/smoke_colors.png</color_range_image>
-      </particle_emitter>
+      </visual>
+
+      <!-- Puff 2: larger, slight east lean -->
+      <visual name="puff2">
+        <pose>0.5 -0.2 8.0 0 0 0</pose>
+        <geometry><sphere><radius>2.0</radius></sphere></geometry>
+        <material>
+          <ambient>0.86 0.92 0.88 1</ambient>
+          <diffuse>0.82 0.90 0.86 1</diffuse>
+          <emissive>0.15 0.24 0.18 1</emissive>
+        </material>
+      </visual>
+
+      <!-- Puff 3: billowing outward -->
+      <visual name="puff3">
+        <pose>-0.6 0.5 11.5 0 0 0</pose>
+        <geometry><sphere><radius>2.6</radius></sphere></geometry>
+        <material>
+          <ambient>0.87 0.92 0.89 1</ambient>
+          <diffuse>0.83 0.90 0.86 1</diffuse>
+          <emissive>0.12 0.20 0.15 1</emissive>
+        </material>
+      </visual>
+
+      <!-- Puff 4: large cloud mass above tank top -->
+      <visual name="puff4">
+        <pose>0.8 -0.6 15.0 0 0 0</pose>
+        <geometry><sphere><radius>3.2</radius></sphere></geometry>
+        <material>
+          <ambient>0.88 0.93 0.90 1</ambient>
+          <diffuse>0.84 0.91 0.87 1</diffuse>
+          <emissive>0.10 0.16 0.12 1</emissive>
+        </material>
+      </visual>
+
+      <!-- Puff 5: wide drift cloud, wind-blown north -->
+      <visual name="puff5">
+        <pose>-1.5 1.2 19.0 0 0 0</pose>
+        <geometry><sphere><radius>4.0</radius></sphere></geometry>
+        <material>
+          <ambient>0.89 0.93 0.90 1</ambient>
+          <diffuse>0.85 0.91 0.88 1</diffuse>
+          <emissive>0.07 0.12 0.09 1</emissive>
+        </material>
+      </visual>
+
+      <!-- Puff 6: far drift, very large, faint glow -->
+      <visual name="puff6">
+        <pose>2.0 -1.0 23.0 0 0 0</pose>
+        <geometry><sphere><radius>5.5</radius></sphere></geometry>
+        <material>
+          <ambient>0.90 0.94 0.91 1</ambient>
+          <diffuse>0.86 0.92 0.88 1</diffuse>
+          <emissive>0.04 0.08 0.06 1</emissive>
+        </material>
+      </visual>
+
+      <!-- Small accent: tight puff overlapping puff2 for texture -->
+      <visual name="puff_accent1">
+        <pose>1.0 0.8 9.5 0 0 0</pose>
+        <geometry><sphere><radius>1.3</radius></sphere></geometry>
+        <material>
+          <ambient>0.85 0.91 0.87 1</ambient>
+          <diffuse>0.81 0.89 0.85 1</diffuse>
+          <emissive>0.16 0.26 0.19 1</emissive>
+        </material>
+      </visual>
+
+      <!-- Small accent: overlapping puff4 for lumpy cloud look -->
+      <visual name="puff_accent2">
+        <pose>-1.2 -1.0 16.5 0 0 0</pose>
+        <geometry><sphere><radius>1.8</radius></sphere></geometry>
+        <material>
+          <ambient>0.87 0.92 0.88 1</ambient>
+          <diffuse>0.83 0.90 0.86 1</diffuse>
+          <emissive>0.10 0.18 0.13 1</emissive>
+        </material>
+      </visual>
     </link>
   </model>
 </sdf>

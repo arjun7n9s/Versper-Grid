@@ -136,7 +136,7 @@ def generate_launch_description():
         parameters=[],
         additional_env={
             "VESPER_API_URL":        "http://165.245.143.11/api",
-            "SAMPLE_INTERVAL_S":     "10",
+            "SAMPLE_INTERVAL_S":     "3",
             "MAX_FRAMES_PER_BUNDLE": "5",
             "JPEG_QUALITY":          "75",
             "INCIDENT_LOCATION":     "Sector 4 — Tank B-4 Flange, Northgate LNG Terminal",

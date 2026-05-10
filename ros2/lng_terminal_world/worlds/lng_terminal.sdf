@@ -175,14 +175,14 @@
         </visual>
       </link>
       <link name="cam_sensor_link">
-        <pose>0 -2.0 9.5 0 -0.05 1.14</pose>
+        <pose>0 -2.0 14.0 0 0.08 0.50</pose>
         <inertial><mass>0.001</mass><inertia><ixx>0.0001</ixx><iyy>0.0001</iyy><izz>0.0001</izz></inertia></inertial>
         <sensor name="cctv_gate_cam" type="camera">
           <pose>0 0 0 0 0 0</pose>
           <update_rate>5</update_rate>
           <camera>
             <horizontal_fov>1.3962634</horizontal_fov>
-            <image><width>1920</width><height>1080</height><format>R8G8B8</format></image>
+            <image><width>640</width><height>480</height><format>R8G8B8</format></image>
             <clip><near>0.1</near><far>400</far></clip>
             <noise><type>gaussian</type><mean>0</mean><stddev>0.003</stddev></noise>
             <lens>
@@ -256,15 +256,15 @@
         </visual>
       </link>
       <link name="cam_sensor_link">
-        <!-- Sensor origin at arm tip, pitched slightly up to watch the plume -->
-        <pose>0 -2.4 11.5 0 -0.05 0.63</pose>
+        <!-- Sensor origin at arm tip, pitched toward Tank B-4 leakage area -->
+        <pose>0 -2.4 16.0 0 0.18 0.95</pose>
         <inertial><mass>0.001</mass><inertia><ixx>0.0001</ixx><iyy>0.0001</iyy><izz>0.0001</izz></inertia></inertial>
         <sensor name="cctv_south_cam" type="camera">
           <pose>0 0 0 0 0 0</pose>
           <update_rate>5</update_rate>
           <camera>
             <horizontal_fov>1.2217</horizontal_fov>
-            <image><width>1920</width><height>1080</height><format>R8G8B8</format></image>
+            <image><width>640</width><height>480</height><format>R8G8B8</format></image>
             <clip><near>0.1</near><far>400</far></clip>
             <noise><type>gaussian</type><mean>0</mean><stddev>0.003</stddev></noise>
             <lens>
@@ -289,7 +289,7 @@
     <!-- ═══ Drones · CCTV cameras · Flare stacks                    ═══ -->
     <!-- ═══════════════════════════════════════════════════════════════ -->
 
-    <model name="drone_d1"><static>false</static><pose>40 -40 25 0 0 -2.3</pose>
+    <model name="drone_d1"><static>false</static><pose>80 -45 40 0 0 -2.3562</pose>
       <link name="base_link">
         <gravity>false</gravity>
         <inertial><mass>1.0</mass><inertia><ixx>0.05</ixx><iyy>0.05</iyy><izz>0.05</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
@@ -343,13 +343,25 @@
           <emissive>0.8 0.0 0.0 1</emissive></material></visual>
         <collision name="c"><geometry><box><size>0.55 0.55 0.16</size></box></geometry></collision>
         
-        <!-- Standard Camera (All-around view) -->
-        <sensor name="drone_cam" type="camera">
-          <pose>0 0 -0.18 0 0.25 1.5707</pose>
-          <update_rate>5</update_rate>
+        <!-- Main Camera: faces inward toward Tank B-4 leakage (yaw=pi = backward relative to drone body) -->
+        <sensor name="drone_cam_main" type="camera">
+          <pose>0 0 0.20 0 0.35 3.14159</pose>
+          <update_rate>10</update_rate>
           <camera>
             <horizontal_fov>1.0472</horizontal_fov>
-            <image><width>1920</width><height>1080</height><format>R8G8B8</format></image>
+            <image><width>640</width><height>480</height><format>R8G8B8</format></image>
+            <clip><near>0.5</near><far>400</far></clip>
+            <noise><type>gaussian</type><mean>0</mean><stddev>0.002</stddev></noise>
+          </camera>
+        </sensor>
+
+        <!-- Back Camera: original outward-facing view (renamed from drone_cam) -->
+        <sensor name="drone_cam_back" type="camera">
+          <pose>0 0 0.20 0 0.45 0</pose>
+          <update_rate>10</update_rate>
+          <camera>
+            <horizontal_fov>1.0472</horizontal_fov>
+            <image><width>640</width><height>480</height><format>R8G8B8</format></image>
             <clip><near>0.5</near><far>400</far></clip>
             <noise><type>gaussian</type><mean>0</mean><stddev>0.002</stddev></noise>
           </camera>
@@ -357,11 +369,11 @@
 
         <!-- Wide Camera (Captures the massive drifting cloud) -->
         <sensor name="drone_cam_wide" type="camera">
-          <pose>0 0 -0.18 0 0.15 1.5707</pose>
+          <pose>0 0 0.20 0 0.55 0</pose>
           <update_rate>5</update_rate>
           <camera>
             <horizontal_fov>1.8</horizontal_fov>
-            <image><width>1920</width><height>1080</height><format>R8G8B8</format></image>
+            <image><width>640</width><height>480</height><format>R8G8B8</format></image>
             <clip><near>0.5</near><far>400</far></clip>
             <noise><type>gaussian</type><mean>0</mean><stddev>0.002</stddev></noise>
           </camera>
@@ -369,11 +381,11 @@
 
         <!-- Tracking Camera (Zoomed in on the flange base) -->
         <sensor name="drone_cam_track" type="camera">
-          <pose>0 0 -0.18 0 0.45 1.5707</pose>
+          <pose>0 0 0.20 0 0.60 0</pose>
           <update_rate>5</update_rate>
           <camera>
             <horizontal_fov>0.5</horizontal_fov>
-            <image><width>1920</width><height>1080</height><format>R8G8B8</format></image>
+            <image><width>640</width><height>480</height><format>R8G8B8</format></image>
             <clip><near>0.5</near><far>400</far></clip>
             <noise><type>gaussian</type><mean>0</mean><stddev>0.002</stddev></noise>
           </camera>
@@ -650,7 +662,7 @@
     <include>
       <uri>model://gas_plume</uri>
       <name>gas_plume_emitter</name>
-      <pose>70 -65 4.5 0 0 0</pose>
+      <pose>60 -73 4.5 0 0 0</pose>
     </include>
     <!-- Removed gas_haze_emitter to prevent alpha depth-sorting clipping with the main plume -->
 
@@ -1069,6 +1081,5 @@
       <visual name="v_cyl2"><pose>30 80 15 0 0 0</pose><geometry><cylinder><radius>12</radius><length>30</length></cylinder></geometry>
         <material><ambient>0.6 0.6 0.6 1</ambient><pbr><metal><roughness>0.3</roughness><metalness>0.7</metalness></metal></pbr></material></visual>
     </link></model>
-
-  </world>
+    </world>
 </sdf>

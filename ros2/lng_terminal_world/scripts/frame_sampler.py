@@ -51,11 +51,15 @@ _FIELD_NOTES = os.environ.get(
     "Drone D-1 orbiting incident zone. CCTV south confirming plume spread.",
 )
 
-# Priority order for frame selection: south > drone > gate
+# Priority order for frame selection: south > drone_main > gate
 _TOPIC_PRIORITY = [
     "/cctv_south/image_raw",
     "/drone_d1/image_raw",
     "/cctv_gate/image_raw",
+]
+# Sidecar topics: always uploaded every bundle regardless of MAX_FRAMES
+_SIDECAR_TOPICS = [
+    "/drone_d1/image_back",
 ]
 
 
@@ -84,11 +88,12 @@ def _ros_image_to_jpeg(msg: Image) -> bytes:
 class FrameSampler(Node):
     def __init__(self) -> None:
         super().__init__("frame_sampler")
-        self._buffers: dict[str, Deque[Image]] = {t: deque(maxlen=3) for t in _TOPIC_PRIORITY}
+        all_topics = _TOPIC_PRIORITY + _SIDECAR_TOPICS
+        self._buffers: dict[str, Deque[Image]] = {t: deque(maxlen=3) for t in all_topics}
         self._last_post: float = 0.0
         self._job_count: int = 0
 
-        for topic in _TOPIC_PRIORITY:
+        for topic in all_topics:
             self.create_subscription(Image, topic, self._make_cb(topic), 2)
             self.get_logger().info(f"Subscribed → {topic}")
 
@@ -116,6 +121,11 @@ class FrameSampler(Node):
                 frames.append((topic, buf[-1]))
             if len(frames) >= _MAX_FRAMES:
                 break
+        # Always append sidecar frames (e.g. drone back cam) if available
+        for topic in _SIDECAR_TOPICS:
+            buf = self._buffers[topic]
+            if buf:
+                frames.append((topic, buf[-1]))
 
         if not frames:
             self.get_logger().warn("No frames received yet — waiting for Gazebo cameras.")
@@ -167,23 +177,22 @@ class FrameSampler(Node):
             self.get_logger().info(
                 f"[job #{self._job_count}] Accepted → job_id={job_id} backend={backend}"
             )
-            # Fire-and-forget SSE poll in background
-            self.executor.create_task(self._poll_result(job_id))  # type: ignore[attr-defined]
+            # Fire-and-forget poll in background thread (avoids asyncio loop issues)
+            import threading
+            t = threading.Thread(target=self._poll_result_sync, args=(job_id,), daemon=True)
+            t.start()
         except Exception as exc:
             self.get_logger().error(f"[job #{self._job_count}] POST failed: {exc}")
 
-    async def _poll_result(self, job_id: str) -> None:
-        """Non-blocking await on the job result — logs final stage + confidence."""
-        import asyncio
-        import httpx
-
+    def _poll_result_sync(self, job_id: str) -> None:
+        """Blocking poll on job result — runs in a daemon thread."""
+        import time as _time
+        _time.sleep(2)
         url = f"{_API_URL}/ingest/{job_id}/await"
-        await asyncio.sleep(2)
         try:
-            async with httpx.AsyncClient(timeout=120) as client:
-                r = await client.post(url, params={"timeout_seconds": 110})
-                r.raise_for_status()
-                snap = r.json()
+            r = requests.post(url, params={"timeout_seconds": 110}, timeout=120)
+            r.raise_for_status()
+            snap = r.json()
             status = snap.get("status")
             backend = snap.get("backend")
             result = snap.get("result") or {}

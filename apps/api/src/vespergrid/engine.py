@@ -58,12 +58,12 @@ def synthesize_from_ingest(request: IngestRequest) -> Scenario:
     by the async ingest path in `main.py` when `VLLM_BASE_URL` is set.
     """
     base = sector_4_containment()
-    evidence_pressure = min(
-        0.08,
-        (request.media_count * 0.009) + (request.sensor_count * 0.002),
-    )
     base.location = request.location
-    base.confidence = min(0.94, base.confidence + evidence_pressure)
+    # Derive confidence from the actual evidence items, not a hardcoded nudge
+    if base.evidence:
+        base.confidence = round(
+            sum(e.confidence for e in base.evidence) / len(base.evidence), 3
+        )
 
     field_note = request.field_notes.strip()
     if field_note:
@@ -249,6 +249,11 @@ def enrich_scenario_with_modalities(
             _merge_sensor_analysis(scenario, sensor)
     if voice_reports:
         _merge_voice_reports(scenario, voice_reports)
+    # Recompute confidence as the true mean of all evidence items now present
+    if scenario.evidence:
+        scenario.confidence = round(
+            sum(e.confidence for e in scenario.evidence) / len(scenario.evidence), 3
+        )
     return scenario
 
 
@@ -372,7 +377,10 @@ def synthesize_from_vlm_output(
         brief_lines.append("Operator field note recorded and linked to evidence graph.")
 
     if not evidence:
-        return sector_4_containment()
+        base = sector_4_containment()
+        return enrich_scenario_with_modalities(
+            base, voice_reports=voice_reports, sensor_trace=sensor_trace
+        )
 
     avg_confidence = sum(all_confidences) / len(all_confidences) if all_confidences else 0.5
     hazard_count = len([e for e in evidence if e.signal == "hazard"])
@@ -384,6 +392,21 @@ def synthesize_from_vlm_output(
         brief_lines.append(
             f"{len(uncertainties)} uncertainty issue(s) require operator verification."
         )
+
+    # Guarantee at least 2 response actions — seed from sector4 fallback if needed
+    if len(actions) < 2:
+        fallback_actions = sector_4_containment().actions
+        existing_ids = {a.id for a in actions}
+        for fa in fallback_actions:
+            if fa.id not in existing_ids:
+                actions.append(fa)
+            if len(actions) >= 3:
+                break
+
+    # Guarantee at least 1 uncertainty — seed from sector4 fallback if needed
+    if not uncertainties:
+        fallback_uncs = sector_4_containment().uncertainties
+        uncertainties.extend(fallback_uncs[:2])
 
     gpu_lanes = _get_gpu_lanes()
 
@@ -400,7 +423,7 @@ def synthesize_from_vlm_output(
             radius=10.0, severity="watch",
             rationale="No explicit hazard zone identified by VLM.",
         )],
-        actions=actions if actions else [],
+        actions=actions,
         uncertainties=uncertainties,
         gpu=gpu_lanes,
         brief=brief_lines,

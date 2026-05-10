@@ -175,14 +175,14 @@
         </visual>
       </link>
       <link name="cam_sensor_link">
-        <pose>0 -2.0 9.5 0 -0.30 1.5707</pose>
+        <pose>0 -2.0 9.5 0 -0.05 1.14</pose>
         <inertial><mass>0.001</mass><inertia><ixx>0.0001</ixx><iyy>0.0001</iyy><izz>0.0001</izz></inertia></inertial>
         <sensor name="cctv_gate_cam" type="camera">
           <pose>0 0 0 0 0 0</pose>
           <update_rate>5</update_rate>
           <camera>
             <horizontal_fov>1.3962634</horizontal_fov>
-            <image><width>1280</width><height>720</height><format>R8G8B8</format></image>
+            <image><width>1920</width><height>1080</height><format>R8G8B8</format></image>
             <clip><near>0.1</near><far>400</far></clip>
             <noise><type>gaussian</type><mean>0</mean><stddev>0.003</stddev></noise>
             <lens>
@@ -256,15 +256,15 @@
         </visual>
       </link>
       <link name="cam_sensor_link">
-        <!-- Sensor origin at arm tip, pitched down to watch B-4 -->
-        <pose>0 -2.4 11.5 0 -0.40 1.5707</pose>
+        <!-- Sensor origin at arm tip, pitched slightly up to watch the plume -->
+        <pose>0 -2.4 11.5 0 -0.05 0.63</pose>
         <inertial><mass>0.001</mass><inertia><ixx>0.0001</ixx><iyy>0.0001</iyy><izz>0.0001</izz></inertia></inertial>
         <sensor name="cctv_south_cam" type="camera">
           <pose>0 0 0 0 0 0</pose>
           <update_rate>5</update_rate>
           <camera>
             <horizontal_fov>1.2217</horizontal_fov>
-            <image><width>1280</width><height>720</height><format>R8G8B8</format></image>
+            <image><width>1920</width><height>1080</height><format>R8G8B8</format></image>
             <clip><near>0.1</near><far>400</far></clip>
             <noise><type>gaussian</type><mean>0</mean><stddev>0.003</stddev></noise>
             <lens>
@@ -289,7 +289,7 @@
     <!-- ═══ Drones · CCTV cameras · Flare stacks                    ═══ -->
     <!-- ═══════════════════════════════════════════════════════════════ -->
 
-    <model name="drone_d1"><static>false</static><pose>72 -50 18 0 0 -2.4</pose>
+    <model name="drone_d1"><static>false</static><pose>40 -40 25 0 0 -2.3</pose>
       <link name="base_link">
         <gravity>false</gravity>
         <inertial><mass>1.0</mass><inertia><ixx>0.05</ixx><iyy>0.05</iyy><izz>0.05</izz><ixy>0</ixy><ixz>0</ixz><iyz>0</iyz></inertia></inertial>
@@ -342,12 +342,38 @@
           <material><ambient>1.0 0.1 0.1 0.3</ambient><diffuse>1.0 0.15 0.15 0.3</diffuse>
           <emissive>0.8 0.0 0.0 1</emissive></material></visual>
         <collision name="c"><geometry><box><size>0.55 0.55 0.16</size></box></geometry></collision>
+        
+        <!-- Standard Camera (All-around view) -->
         <sensor name="drone_cam" type="camera">
-          <pose>0 0 -0.18 0 1.5707 0</pose>
+          <pose>0 0 -0.18 0 0.25 1.5707</pose>
           <update_rate>5</update_rate>
           <camera>
             <horizontal_fov>1.0472</horizontal_fov>
-            <image><width>1280</width><height>720</height><format>R8G8B8</format></image>
+            <image><width>1920</width><height>1080</height><format>R8G8B8</format></image>
+            <clip><near>0.5</near><far>400</far></clip>
+            <noise><type>gaussian</type><mean>0</mean><stddev>0.002</stddev></noise>
+          </camera>
+        </sensor>
+
+        <!-- Wide Camera (Captures the massive drifting cloud) -->
+        <sensor name="drone_cam_wide" type="camera">
+          <pose>0 0 -0.18 0 0.15 1.5707</pose>
+          <update_rate>5</update_rate>
+          <camera>
+            <horizontal_fov>1.8</horizontal_fov>
+            <image><width>1920</width><height>1080</height><format>R8G8B8</format></image>
+            <clip><near>0.5</near><far>400</far></clip>
+            <noise><type>gaussian</type><mean>0</mean><stddev>0.002</stddev></noise>
+          </camera>
+        </sensor>
+
+        <!-- Tracking Camera (Zoomed in on the flange base) -->
+        <sensor name="drone_cam_track" type="camera">
+          <pose>0 0 -0.18 0 0.45 1.5707</pose>
+          <update_rate>5</update_rate>
+          <camera>
+            <horizontal_fov>0.5</horizontal_fov>
+            <image><width>1920</width><height>1080</height><format>R8G8B8</format></image>
             <clip><near>0.5</near><far>400</far></clip>
             <noise><type>gaussian</type><mean>0</mean><stddev>0.002</stddev></noise>
           </camera>
@@ -620,15 +646,20 @@
     </link></model>
 
     <!-- ═══ B-4 GAS PLUME: Particle Emitter Models ═══ -->
+    <!-- Rising column: offset 2m from tank surface to prevent clipping -->
     <include>
       <uri>model://gas_plume</uri>
       <name>gas_plume_emitter</name>
-      <pose>68.1 -65 4.5 0 0 0</pose>
+      <pose>70 -65 4.5 0 0 0</pose>
     </include>
+    <!-- Removed gas_haze_emitter to prevent alpha depth-sorting clipping with the main plume -->
+
+    <!-- ═══ ATMOSPHERIC LIVELINESS: SNOWFALL ═══ -->
+    <!-- Snowfall from 80m altitude, covers entire facility -->
     <include>
-      <uri>model://gas_haze</uri>
-      <name>gas_haze_emitter</name>
-      <pose>68.1 -65 0.3 0 0 0</pose>
+      <uri>model://snowfall</uri>
+      <name>snowfall_main</name>
+      <pose>0 0 80 0 0 0</pose>
     </include>
 
     <!-- Pipe rack across Sector 1 -->
@@ -718,6 +749,34 @@
       <visual name="trailer"><pose>0 -7 -0.6 0 0 0</pose><geometry><box><size>7 13 3.5</size></box></geometry>
         <material><ambient>0.52 0.52 0.52 1</ambient><diffuse>0.62 0.62 0.62 1</diffuse>
         <pbr><metal><roughness>0.58</roughness><metalness>0.52</metalness></metal></pbr></material></visual></link></model>
+
+    <!-- Sector 1 Dense Infrastructure: Factories & Warehouses -->
+    <model name="s1_processing_plant"><static>true</static><pose>140 -80 10 0 0 0</pose><link name="l">
+      <collision name="c"><geometry><box><size>40 50 20</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>40 50 20</size></box></geometry>
+        <material><ambient>0.35 0.35 0.38 1</ambient><diffuse>0.45 0.45 0.48 1</diffuse>
+        <pbr><metal><roughness>0.6</roughness><metalness>0.3</metalness></metal></pbr></material></visual>
+      <visual name="chimney1"><pose>10 15 15 0 0 0</pose><geometry><cylinder><radius>1.5</radius><length>10</length></cylinder></geometry>
+        <material><ambient>0.2 0.2 0.2 1</ambient><diffuse>0.3 0.3 0.3 1</diffuse></material></visual>
+      <visual name="chimney2"><pose>10 5 15 0 0 0</pose><geometry><cylinder><radius>1.5</radius><length>10</length></cylinder></geometry>
+        <material><ambient>0.2 0.2 0.2 1</ambient><diffuse>0.3 0.3 0.3 1</diffuse></material></visual>
+    </link></model>
+
+    <model name="s1_compressor_station"><static>true</static><pose>40 -150 6 0 0 0</pose><link name="l">
+      <collision name="c"><geometry><box><size>35 25 12</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>35 25 12</size></box></geometry>
+        <material><ambient>0.42 0.45 0.42 1</ambient><diffuse>0.52 0.55 0.52 1</diffuse>
+        <pbr><metal><roughness>0.7</roughness><metalness>0.1</metalness></metal></pbr></material></visual>
+      <visual name="roof_units"><pose>0 0 7 0 0 0</pose><geometry><box><size>25 15 2</size></box></geometry>
+        <material><ambient>0.25 0.25 0.25 1</ambient><diffuse>0.35 0.35 0.35 1</diffuse></material></visual>
+    </link></model>
+
+    <model name="s1_storage_warehouse"><static>true</static><pose>10 -150 8 0 0 0</pose><link name="l">
+      <collision name="c"><geometry><box><size>20 45 16</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>20 45 16</size></box></geometry>
+        <material><ambient>0.5 0.48 0.45 1</ambient><diffuse>0.6 0.58 0.55 1</diffuse>
+        <pbr><metal><roughness>0.8</roughness><metalness>0.0</metalness></metal></pbr></material></visual>
+    </link></model>
 
     <!-- Muster point -->
     <model name="muster_shelter"><static>true</static><pose>-115 -115 2.2 0 0 0</pose><link name="l">
@@ -908,20 +967,29 @@
       <visual name="v"><geometry><box><size>600 0.5 4</size></box></geometry>
         <material><ambient>0.26 0.24 0.22 1</ambient><diffuse>0.34 0.32 0.28 1</diffuse></material></visual></link></model>
 
-    <!-- Arrays of background tanks in Sector 5 -->
-    <model name="s5_tanks_row1"><static>true</static><pose>-400 100 0 0 0 0</pose><link name="l">
-      <visual name="v1"><pose>0 0 10 0 0 0</pose><geometry><cylinder><radius>10</radius><length>20</length></cylinder></geometry><material><ambient>0.6 0.6 0.6 1</ambient></material></visual>
-      <visual name="v2"><pose>0 30 10 0 0 0</pose><geometry><cylinder><radius>10</radius><length>20</length></cylinder></geometry><material><ambient>0.6 0.6 0.6 1</ambient></material></visual>
-      <visual name="v3"><pose>0 60 10 0 0 0</pose><geometry><cylinder><radius>10</radius><length>20</length></cylinder></geometry><material><ambient>0.6 0.6 0.6 1</ambient></material></visual>
-      <visual name="v4"><pose>0 -30 10 0 0 0</pose><geometry><cylinder><radius>10</radius><length>20</length></cylinder></geometry><material><ambient>0.6 0.6 0.6 1</ambient></material></visual>
-      <visual name="v5"><pose>0 -60 10 0 0 0</pose><geometry><cylinder><radius>10</radius><length>20</length></cylinder></geometry><material><ambient>0.6 0.6 0.6 1</ambient></material></visual>
-    </link></model>
-    <model name="s5_tanks_row2"><static>true</static><pose>-450 100 0 0 0 0</pose><link name="l">
-      <visual name="v1"><pose>0 0 10 0 0 0</pose><geometry><cylinder><radius>10</radius><length>20</length></cylinder></geometry><material><ambient>0.5 0.5 0.5 1</ambient></material></visual>
-      <visual name="v2"><pose>0 30 10 0 0 0</pose><geometry><cylinder><radius>10</radius><length>20</length></cylinder></geometry><material><ambient>0.5 0.5 0.5 1</ambient></material></visual>
-      <visual name="v3"><pose>0 60 10 0 0 0</pose><geometry><cylinder><radius>10</radius><length>20</length></cylinder></geometry><material><ambient>0.5 0.5 0.5 1</ambient></material></visual>
-      <visual name="v4"><pose>0 -30 10 0 0 0</pose><geometry><cylinder><radius>10</radius><length>20</length></cylinder></geometry><material><ambient>0.5 0.5 0.5 1</ambient></material></visual>
-      <visual name="v5"><pose>0 -60 10 0 0 0</pose><geometry><cylinder><radius>10</radius><length>20</length></cylinder></geometry><material><ambient>0.5 0.5 0.5 1</ambient></material></visual>
+    <!-- Arrays of detailed background tanks and factories in Sector 5 -->
+    <model name="s5_factory_1"><static>true</static><pose>-300 150 15 0 0 0</pose><link name="l">
+      <collision name="c"><geometry><box><size>80 60 30</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>80 60 30</size></box></geometry>
+        <material><ambient>0.3 0.3 0.32 1</ambient><diffuse>0.35 0.35 0.38 1</diffuse>
+        <pbr><metal><roughness>0.6</roughness><metalness>0.2</metalness></metal></pbr></material></visual>
+      <visual name="roof"><pose>0 0 15 0 0 0</pose><geometry><box><size>82 62 2</size></box></geometry>
+        <material><ambient>0.2 0.2 0.2 1</ambient></material></visual></link></model>
+    
+    <model name="s5_tanks_detailed"><static>true</static><pose>-400 50 0 0 0 0</pose><link name="l">
+      <!-- Large storage tank 1 -->
+      <collision name="c1"><pose>0 0 15 0 0 0</pose><geometry><cylinder><radius>15</radius><length>30</length></cylinder></geometry></collision>
+      <visual name="v1"><pose>0 0 15 0 0 0</pose><geometry><cylinder><radius>15</radius><length>30</length></cylinder></geometry>
+        <material><ambient>0.7 0.7 0.7 1</ambient><diffuse>0.8 0.8 0.8 1</diffuse>
+        <pbr><metal><roughness>0.4</roughness><metalness>0.7</metalness></metal></pbr></material></visual>
+      <!-- Large storage tank 2 -->
+      <collision name="c2"><pose>0 40 15 0 0 0</pose><geometry><cylinder><radius>15</radius><length>30</length></cylinder></geometry></collision>
+      <visual name="v2"><pose>0 40 15 0 0 0</pose><geometry><cylinder><radius>15</radius><length>30</length></cylinder></geometry>
+        <material><ambient>0.65 0.65 0.65 1</ambient><diffuse>0.75 0.75 0.75 1</diffuse>
+        <pbr><metal><roughness>0.4</roughness><metalness>0.7</metalness></metal></pbr></material></visual>
+      <!-- Pipe connecting them -->
+      <visual name="pipe"><pose>0 20 28 1.5707 0 0</pose><geometry><cylinder><radius>0.8</radius><length>40</length></cylinder></geometry>
+        <material><ambient>0.3 0.3 0.3 1</ambient></material></visual>
     </link></model>
 
     <!-- Sector 6 (East Background Expansion) -->
@@ -929,37 +997,77 @@
       <visual name="v"><geometry><box><size>1000 0.5 4</size></box></geometry>
         <material><ambient>0.26 0.24 0.22 1</ambient><diffuse>0.34 0.32 0.28 1</diffuse></material></visual></link></model>
     
-    <!-- Distillation columns cluster in Sector 6 -->
-    <model name="s6_cols"><static>true</static><pose>750 200 0 0 0 0</pose><link name="l">
-      <visual name="c1"><pose>0 0 30 0 0 0</pose><geometry><cylinder><radius>4</radius><length>60</length></cylinder></geometry><material><ambient>0.5 0.5 0.5 1</ambient></material></visual>
-      <visual name="c2"><pose>20 0 35 0 0 0</pose><geometry><cylinder><radius>3</radius><length>70</length></cylinder></geometry><material><ambient>0.5 0.5 0.5 1</ambient></material></visual>
-      <visual name="c3"><pose>40 0 25 0 0 0</pose><geometry><cylinder><radius>5</radius><length>50</length></cylinder></geometry><material><ambient>0.5 0.5 0.5 1</ambient></material></visual>
-      <visual name="c4"><pose>0 30 35 0 0 0</pose><geometry><cylinder><radius>3</radius><length>70</length></cylinder></geometry><material><ambient>0.5 0.5 0.5 1</ambient></material></visual>
-      <visual name="c5"><pose>20 30 40 0 0 0</pose><geometry><cylinder><radius>2.5</radius><length>80</length></cylinder></geometry><material><ambient>0.5 0.5 0.5 1</ambient></material></visual>
-      <visual name="c6"><pose>40 30 30 0 0 0</pose><geometry><cylinder><radius>4</radius><length>60</length></cylinder></geometry><material><ambient>0.5 0.5 0.5 1</ambient></material></visual>
+    <!-- Complex Processing Area in Sector 6 -->
+    <model name="s6_processing"><static>true</static><pose>750 100 0 0 0 0</pose><link name="l">
+      <!-- Main structure base -->
+      <collision name="c_base"><pose>0 0 5 0 0 0</pose><geometry><box><size>60 40 10</size></box></geometry></collision>
+      <visual name="v_base"><pose>0 0 5 0 0 0</pose><geometry><box><size>60 40 10</size></box></geometry>
+        <material><ambient>0.25 0.25 0.25 1</ambient></material></visual>
+      <!-- Tall chimneys/columns -->
+      <collision name="c_col1"><pose>-15 0 40 0 0 0</pose><geometry><cylinder><radius>3</radius><length>80</length></cylinder></geometry></collision>
+      <visual name="v_col1"><pose>-15 0 40 0 0 0</pose><geometry><cylinder><radius>3</radius><length>80</length></cylinder></geometry>
+        <material><ambient>0.5 0.5 0.5 1</ambient><pbr><metal><roughness>0.5</roughness><metalness>0.6</metalness></metal></pbr></material></visual>
+      <collision name="c_col2"><pose>15 0 35 0 0 0</pose><geometry><cylinder><radius>4</radius><length>70</length></cylinder></geometry></collision>
+      <visual name="v_col2"><pose>15 0 35 0 0 0</pose><geometry><cylinder><radius>4</radius><length>70</length></cylinder></geometry>
+        <material><ambient>0.55 0.55 0.55 1</ambient><pbr><metal><roughness>0.5</roughness><metalness>0.6</metalness></metal></pbr></material></visual>
+      <!-- Horizontal cooling fins -->
+      <visual name="v_fins"><pose>0 0 20 0 0 0</pose><geometry><box><size>50 30 5</size></box></geometry>
+        <material><ambient>0.4 0.4 0.4 1</ambient></material></visual>
     </link></model>
 
     <!-- Sector 7 (North Background Expansion) -->
     <model name="s7_fence_n"><static>true</static><pose>0 900 2 0 0 0</pose><link name="l">
       <visual name="v"><geometry><box><size>1800 0.5 4</size></box></geometry>
         <material><ambient>0.26 0.24 0.22 1</ambient><diffuse>0.34 0.32 0.28 1</diffuse></material></visual></link></model>
-    <model name="s7_bldgs"><static>true</static><pose>0 750 0 0 0 0</pose><link name="l">
-      <visual name="b1"><pose>-200 0 15 0 0 0</pose><geometry><box><size>100 80 30</size></box></geometry><material><ambient>0.3 0.3 0.3 1</ambient></material></visual>
-      <visual name="b2"><pose>200 0 20 0 0 0</pose><geometry><box><size>120 90 40</size></box></geometry><material><ambient>0.3 0.3 0.3 1</ambient></material></visual>
-      <visual name="b3"><pose>0 100 10 0 0 0</pose><geometry><box><size>80 60 20</size></box></geometry><material><ambient>0.3 0.3 0.3 1</ambient></material></visual>
+    
+    <!-- Administrative & Logistics Hub in Sector 7 -->
+    <model name="s7_admin_complex"><static>true</static><pose>0 750 0 0 0 0</pose><link name="l">
+      <!-- Main office building -->
+      <collision name="c_office"><pose>-150 0 20 0 0 0</pose><geometry><box><size>120 60 40</size></box></geometry></collision>
+      <visual name="v_office"><pose>-150 0 20 0 0 0</pose><geometry><box><size>120 60 40</size></box></geometry>
+        <material><ambient>0.4 0.45 0.5 1</ambient><diffuse>0.5 0.55 0.6 1</diffuse>
+        <pbr><metal><roughness>0.2</roughness><metalness>0.3</metalness></metal></pbr></material></visual>
+      <!-- Glass facade -->
+      <visual name="v_glass"><pose>-150 -30.5 20 0 0 0</pose><geometry><box><size>110 0.5 35</size></box></geometry>
+        <material><ambient>0.1 0.2 0.3 1</ambient><diffuse>0.2 0.4 0.6 1</diffuse>
+        <pbr><metal><roughness>0.1</roughness><metalness>0.9</metalness></metal></pbr></material></visual>
+      <!-- Large warehouse -->
+      <collision name="c_warehouse"><pose>150 0 15 0 0 0</pose><geometry><box><size>160 100 30</size></box></geometry></collision>
+      <visual name="v_warehouse"><pose>150 0 15 0 0 0</pose><geometry><box><size>160 100 30</size></box></geometry>
+        <material><ambient>0.35 0.35 0.35 1</ambient><diffuse>0.4 0.4 0.4 1</diffuse></material></visual>
     </link></model>
 
     <!-- Sector 8 (South Background Expansion) -->
     <model name="s8_fence_s"><static>true</static><pose>0 -800 2 0 0 0</pose><link name="l">
       <visual name="v"><geometry><box><size>1600 0.5 4</size></box></geometry>
         <material><ambient>0.26 0.24 0.22 1</ambient><diffuse>0.34 0.32 0.28 1</diffuse></material></visual></link></model>
-    <model name="s8_storage"><static>true</static><pose>200 -600 0 0 0 0</pose><link name="l">
-      <visual name="sph1"><pose>0 0 12 0 0 0</pose><geometry><sphere><radius>12</radius></sphere></geometry><material><ambient>0.7 0.7 0.7 1</ambient></material></visual>
-      <visual name="sph2"><pose>40 0 12 0 0 0</pose><geometry><sphere><radius>12</radius></sphere></geometry><material><ambient>0.7 0.7 0.7 1</ambient></material></visual>
-      <visual name="sph3"><pose>80 0 12 0 0 0</pose><geometry><sphere><radius>12</radius></sphere></geometry><material><ambient>0.7 0.7 0.7 1</ambient></material></visual>
-      <visual name="sph4"><pose>0 40 12 0 0 0</pose><geometry><sphere><radius>12</radius></sphere></geometry><material><ambient>0.7 0.7 0.7 1</ambient></material></visual>
-      <visual name="sph5"><pose>40 40 12 0 0 0</pose><geometry><sphere><radius>12</radius></sphere></geometry><material><ambient>0.7 0.7 0.7 1</ambient></material></visual>
-      <visual name="sph6"><pose>80 40 12 0 0 0</pose><geometry><sphere><radius>12</radius></sphere></geometry><material><ambient>0.7 0.7 0.7 1</ambient></material></visual>
+    
+    <!-- Massive Storage Farm in Sector 8 -->
+    <model name="s8_storage_farm"><static>true</static><pose>100 -600 0 0 0 0</pose><link name="l">
+      <!-- Huge spherical tank -->
+      <collision name="c_sph1"><pose>0 0 20 0 0 0</pose><geometry><sphere><radius>20</radius></sphere></geometry></collision>
+      <visual name="v_sph1"><pose>0 0 20 0 0 0</pose><geometry><sphere><radius>20</radius></sphere></geometry>
+        <material><ambient>0.8 0.8 0.82 1</ambient><diffuse>0.9 0.9 0.92 1</diffuse>
+        <pbr><metal><roughness>0.2</roughness><metalness>0.8</metalness></metal></pbr></material></visual>
+      <!-- Concrete base -->
+      <visual name="v_base1"><pose>0 0 5 0 0 0</pose><geometry><cylinder><radius>18</radius><length>10</length></cylinder></geometry>
+        <material><ambient>0.3 0.3 0.3 1</ambient></material></visual>
+      
+      <!-- Second spherical tank -->
+      <collision name="c_sph2"><pose>80 0 20 0 0 0</pose><geometry><sphere><radius>20</radius></sphere></geometry></collision>
+      <visual name="v_sph2"><pose>80 0 20 0 0 0</pose><geometry><sphere><radius>20</radius></sphere></geometry>
+        <material><ambient>0.8 0.8 0.82 1</ambient><diffuse>0.9 0.9 0.92 1</diffuse>
+        <pbr><metal><roughness>0.2</roughness><metalness>0.8</metalness></metal></pbr></material></visual>
+      <visual name="v_base2"><pose>80 0 5 0 0 0</pose><geometry><cylinder><radius>18</radius><length>10</length></cylinder></geometry>
+        <material><ambient>0.3 0.3 0.3 1</ambient></material></visual>
+      
+      <!-- Cylindrical storage cluster -->
+      <collision name="c_cyl1"><pose>0 80 15 0 0 0</pose><geometry><cylinder><radius>12</radius><length>30</length></cylinder></geometry></collision>
+      <visual name="v_cyl1"><pose>0 80 15 0 0 0</pose><geometry><cylinder><radius>12</radius><length>30</length></cylinder></geometry>
+        <material><ambient>0.6 0.6 0.6 1</ambient><pbr><metal><roughness>0.3</roughness><metalness>0.7</metalness></metal></pbr></material></visual>
+      <collision name="c_cyl2"><pose>30 80 15 0 0 0</pose><geometry><cylinder><radius>12</radius><length>30</length></cylinder></geometry></collision>
+      <visual name="v_cyl2"><pose>30 80 15 0 0 0</pose><geometry><cylinder><radius>12</radius><length>30</length></cylinder></geometry>
+        <material><ambient>0.6 0.6 0.6 1</ambient><pbr><metal><roughness>0.3</roughness><metalness>0.7</metalness></metal></pbr></material></visual>
     </link></model>
 
   </world>

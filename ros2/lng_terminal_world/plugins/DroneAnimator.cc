@@ -61,10 +61,10 @@ public:
       const bool blink = (static_cast<int>(t * 2.0)) % 2 == 0;
       const double bob = 0.25 * std::sin(t * 1.2);
       const double jitter = blink ? 0.04 : -0.04;
-      const double x = 72.0 + 0.4 * std::sin(t * 0.3);
-      const double y = -50.0 + 0.4 * std::cos(t * 0.3);
-      const double z = 18.0 + bob + jitter;
-      const double yaw = -2.4 + 0.05 * std::sin(t * 0.5);
+      const double x = 80.0 + 0.4 * std::sin(t * 0.3);
+      const double y = -45.0 + 0.4 * std::cos(t * 0.3);
+      const double z = 40.0 + bob + jitter;
+      const double yaw = -2.3562 + 0.05 * std::sin(t * 0.5);
       SetPose(_ecm, d1_, x, y, z, yaw);
     }
 

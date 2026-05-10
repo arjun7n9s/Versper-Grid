@@ -107,10 +107,18 @@ def generate_launch_description():
         arguments=[
             f"{_ign('drone_d1', 'base_link', 'drone_cam', 'image')}{IMG}",
             f"{_ign('drone_d1', 'base_link', 'drone_cam', 'camera_info')}{CAM_INFO}",
+            f"{_ign('drone_d1', 'base_link', 'drone_cam_wide', 'image')}{IMG}",
+            f"{_ign('drone_d1', 'base_link', 'drone_cam_wide', 'camera_info')}{CAM_INFO}",
+            f"{_ign('drone_d1', 'base_link', 'drone_cam_track', 'image')}{IMG}",
+            f"{_ign('drone_d1', 'base_link', 'drone_cam_track', 'camera_info')}{CAM_INFO}",
         ],
         remappings=[
-            (_ign("drone_d1", "base_link", "drone_cam", "image"),       "/drone_d1/image_raw"),
-            (_ign("drone_d1", "base_link", "drone_cam", "camera_info"), "/drone_d1/camera_info"),
+            (_ign("drone_d1", "base_link", "drone_cam", "image"),             "/drone_d1/image_raw"),
+            (_ign("drone_d1", "base_link", "drone_cam", "camera_info"),       "/drone_d1/camera_info"),
+            (_ign("drone_d1", "base_link", "drone_cam_wide", "image"),        "/drone_d1/image_wide"),
+            (_ign("drone_d1", "base_link", "drone_cam_wide", "camera_info"),  "/drone_d1/camera_info_wide"),
+            (_ign("drone_d1", "base_link", "drone_cam_track", "image"),       "/drone_d1/image_track"),
+            (_ign("drone_d1", "base_link", "drone_cam_track", "camera_info"), "/drone_d1/camera_info_track"),
         ],
         output="screen",
     )
