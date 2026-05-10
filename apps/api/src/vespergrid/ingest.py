@@ -222,6 +222,14 @@ async def _run_pipeline(job: IngestJob) -> None:
             1.0,
         )
         job.status = "complete"
+        # Store in RAG memory for future retrieval (fire-and-forget)
+        try:
+            from .memory import store_incident
+            await asyncio.get_event_loop().run_in_executor(
+                None, store_incident, scenario.model_dump()
+            )
+        except Exception as exc:
+            logger.debug("RAG store skipped: %s", exc)
     except Exception as exc:
         logger.exception("Pipeline failed for job %s", job.id)
         job.status = "failed"

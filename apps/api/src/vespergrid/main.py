@@ -21,10 +21,12 @@ import tempfile
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sse_starlette.sse import EventSourceResponse
 
+from .broadcast import approve_broadcast, get_latest_wav, get_latest_script
 from .engine import runtime_plan, sector_4_containment
 from .ingest import IngestJob, registry, schedule
 from .models import IngestRequest, Scenario, TranscribeResponse
@@ -339,3 +341,43 @@ async def ingest_await(job_id: str, timeout_seconds: float = 30.0) -> dict:
             raise HTTPException(status_code=504, detail="job did not complete in time")
         await asyncio.sleep(0.1)
     return job.snapshot()
+
+
+# ─── BROADCAST ENDPOINTS ──────────────────────────────────────────────────────
+
+class BroadcastRequest(BaseModel):
+    incident: str
+    location: str
+    approved_actions: list[str]
+    wind_info: str = ""
+
+
+@app.post("/api/broadcast/approve")
+async def broadcast_approve(body: BroadcastRequest) -> dict:
+    """Generate a PA announcement script via LLM + TTS, return audio URL."""
+    result = await approve_broadcast(
+        incident=body.incident,
+        location=body.location,
+        approved_actions=body.approved_actions,
+        wind_info=body.wind_info,
+    )
+    return result
+
+
+@app.get("/api/broadcast/latest")
+async def broadcast_latest() -> FileResponse:
+    """Serve the most recently generated broadcast wav file."""
+    wav = get_latest_wav()
+    if wav is None or not wav.exists():
+        raise HTTPException(status_code=404, detail="No broadcast generated yet")
+    return FileResponse(
+        path=str(wav),
+        media_type="audio/wav",
+        headers={"Cache-Control": "no-cache"},
+    )
+
+
+@app.get("/api/broadcast/script")
+async def broadcast_script() -> dict:
+    """Return the latest PA script text."""
+    return {"script": get_latest_script()}

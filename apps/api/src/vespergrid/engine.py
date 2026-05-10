@@ -22,7 +22,7 @@ from .models import (
     Scenario,
     UncertaintyIssue,
 )
-from .sensor_analysis import SensorAnalysis, analyze_sensor_trace
+from .sensor_analysis import SensorAnalysis, analyze_sensor_trace, compute_exclusion_zone
 
 # engine.py -> vespergrid -> src -> api -> apps -> console/src/data/sector4.json
 _SCENARIO_PATH = (
@@ -235,6 +235,56 @@ def _merge_sensor_analysis(scenario: Scenario, sensor: SensorAnalysis) -> None:
     )
     scenario.brief.append(sensor.summary)
     scenario.confidence = min(0.96, max(scenario.confidence, sensor.confidence))
+
+    # Compute and inject downwind evacuation exclusion cone
+    if sensor.wind_speed_mps is not None and sensor.wind_direction_deg is not None:
+        source_zone = next((z for z in scenario.zones if z.severity == "critical"), None)
+        src_x = source_zone.x if source_zone else 42.0
+        src_y = source_zone.y if source_zone else 48.0
+        excl = compute_exclusion_zone(
+            source_x=src_x,
+            source_y=src_y,
+            wind_speed_mps=sensor.wind_speed_mps,
+            wind_direction_deg=sensor.wind_direction_deg,
+            peak_ppm=sensor.peak_ppm,
+        )
+        existing_ids = {z.id for z in scenario.zones}
+        if "z-evac-cone" not in existing_ids:
+            scenario.zones.append(RiskZone(
+                id="z-evac-cone",
+                label="Downwind Exclusion Zone",
+                x=excl["cone_points"][0][0],
+                y=excl["cone_points"][0][1],
+                radius=excl["radius"],
+                severity=excl["severity"],
+                rationale=(
+                    f"PAC exclusion cone: wind {sensor.wind_speed_mps:.1f} m/s "
+                    f"at {sensor.wind_direction_deg:.0f}°. "
+                    f"Peak {sensor.peak_ppm:.1f} ppm."
+                ),
+                metadata={
+                    "cone_points": excl["cone_points"],
+                    "wind_direction_deg": excl["wind_direction_deg"],
+                    "wind_speed_mps": excl["wind_speed_mps"],
+                    "is_exclusion_cone": True,
+                },
+            ))
+
+    if sensor.is_anomalous:
+        scenario.uncertainties.append(
+            UncertaintyIssue(
+                id="u-anomaly-detection",
+                kind="model_disagreement",
+                title="Sensor anomaly flagged by IsolationForest",
+                detail=(
+                    f"The gas/wind trace (score={sensor.anomaly_score:.3f}) deviates significantly "
+                    "from normal operating ranges. The reading may indicate early-stage drift "
+                    "not yet captured by threshold rules."
+                ),
+                severity="elevated",
+                sourceEntityIds=[sensor.source_uuid],
+            )
+        )
 
 
 def enrich_scenario_with_modalities(

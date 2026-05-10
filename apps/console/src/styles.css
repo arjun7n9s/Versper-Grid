@@ -252,6 +252,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-rad
   border-right:1px solid var(--border);
 }
 .col:last-child{border-right:none}
+.col-left{overflow-y:auto}
 
 /* ════════════════════════════════════════════════════════════════════════════
    PANEL — reusable card primitive
@@ -291,6 +292,11 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-rad
   gap:6px;padding:20px;
   color:var(--t4);font-size:10px;text-align:center;
   text-transform:uppercase;letter-spacing:.05em;
+  position:relative;
+}
+.empty::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,245,0.02) 2px,rgba(0,212,245,0.02) 3px);
 }
 .empty svg{opacity:.12}
 
@@ -422,7 +428,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-rad
   margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--t3);
 }
 .ib-title{
-  font-family:var(--display);font-size:20px;font-weight:800;
+  font-family:var(--display);font-size:16px;font-weight:800;
   color:#fff;letter-spacing:-.01em;line-height:1.15;margin-bottom:8px;
 }
 .ib-thesis{font-size:11px;color:var(--t2);line-height:1.5;margin-bottom:8px}
@@ -462,7 +468,7 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-rad
 .action-stats{display:flex;gap:12px}
 .astat{display:flex;flex-direction:column;gap:1px}
 .astat-l{font-size:7px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
-.astat-v{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--t1)}
+.astat-v{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70px;}
 .astat-v.eta{color:var(--amber)}
 .astat-v.impact{color:var(--cyan)}
 .approve-btn{
@@ -515,6 +521,21 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-rad
 }
 .unc-badge.critical{background:rgba(239,68,68,0.1);color:var(--red)}
 .unc-badge.elevated{background:rgba(245,158,11,0.1);color:var(--amber)}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   ZONE MAP
+════════════════════════════════════════════════════════════════════════════ */
+.zone-map-wrap{padding:8px 10px 10px;display:flex;flex-direction:column;gap:6px}
+.zone-map-svg{
+  width:100%;aspect-ratio:1/1;max-height:160px;
+  background:rgba(5,8,16,0.6);border-radius:4px;
+  border:1px solid var(--border);display:block;
+}
+.zone-map-legend{display:flex;gap:10px;flex-wrap:wrap}
+.zml-item{font-size:9px;color:var(--t3);font-family:var(--mono)}
+.zml-item.evac{color:#ef4444}
+.ledger-panel{max-height:220px}
+.job-panel{max-height:180px}
 
 /* ════════════════════════════════════════════════════════════════════════════
    GPU STRIP
@@ -608,13 +629,18 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-rad
   background:rgba(13,20,34,0.97);
   backdrop-filter:blur(24px);
   box-shadow:0 8px 32px rgba(0,0,0,0.5);
-  color:var(--amber);min-width:290px;
+  color:var(--amber);min-width:320px;max-width:520px;
   animation:toast-in .3s cubic-bezier(0.34,1.56,0.64,1);
 }
+.bcast-icon{flex-shrink:0;color:var(--amber)}
+.bcast-body{flex:1;min-width:0}
 .bcast-title{font-size:12px;font-weight:700;color:var(--amber)}
-.bcast-sub{font-size:10px;color:var(--t2);margin-top:2px}
-.bcast-close{margin-left:auto;color:var(--t3);flex-shrink:0}
+.bcast-script{font-size:10px;color:var(--t1);margin-top:5px;line-height:1.5;max-width:420px;white-space:pre-wrap}
+.bcast-err{font-size:10px;color:var(--red);margin-top:4px}
+.bcast-close{margin-left:auto;color:var(--t3);flex-shrink:0;align-self:flex-start}
 .bcast-close:hover{color:var(--t1)}
+.bcast-pulse{animation:bcast-wave 0.7s ease-in-out infinite alternate}
+@keyframes bcast-wave{from{opacity:1;transform:scale(1)}to{opacity:0.5;transform:scale(1.2)}}
 
 /* ════════════════════════════════════════════════════════════════════════════
    ANIMATIONS
@@ -631,3 +657,29 @@ button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-rad
 ════════════════════════════════════════════════════════════════════════════ */
 .mono{font-family:var(--mono)}
 .truncate{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+@media (max-width: 1024px) {
+  .workspace {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .col {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    overflow: visible;
+  }
+  .col:last-child {
+    border-bottom: none;
+  }
+  .panel.grow {
+    min-height: 300px;
+  }
+  .topbar {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 8px 16px;
+    gap: 8px;
+  }
+}

@@ -29,6 +29,7 @@ export interface RiskZone {
   radius: number;
   severity: Severity;
   rationale: string;
+  metadata?: Record<string, any>;
 }
 
 export interface ResponseAction {

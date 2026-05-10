@@ -1,5 +1,40 @@
 # VesperGrid — Last-Minute Feature Plans
 
+> **Stable checkpoint**: `git checkout v2-stable` to restore working dashboard at any time.
+
+---
+
+## Execution Plan (Categorized & Prioritized)
+
+### 🟢 TIER 1 — Do Now (quick wins, high demo value, low risk)
+| # | Feature | Est. | Risk | Files |
+|---|---------|------|------|-------|
+| 2 | Cross-Camera Reasoning Prompt | 20m | None | `vlm_client.py` |
+| 3 | Sensor Anomaly Detection (IsolationForest) | 1h | Low | `sensor_analysis.py`, `ingest.py` |
+| 5 | Structured Output Validator Agent | 1h | Low | `vlm_client.py`, `ingest.py` |
+
+### 🟡 TIER 2 — Do Next (high demo wow, moderate effort)
+| # | Feature | Est. | Risk | Files |
+|---|---------|------|------|-------|
+| 1 | Emergency Broadcast Loop (TTS + PA) | 2.5h | Medium | `main.py`, `broadcast.py`, `App.tsx` |
+| 6 | Evacuation Zone Geometry on Map | 1.5h | Low | `App.tsx`, `sensor_analysis.py` |
+
+### 🔴 TIER 3 — Skip unless time allows (complex, high effort)
+| # | Feature | Est. | Risk | Files |
+|---|---------|------|------|-------|
+| 4 | RAG Incident Memory (ChromaDB) | 4h | High | `memory.py`, `vlm_client.py`, `ingest.py` |
+
+### Execution Order
+1. ✅ **Stable tag** — done (`v2-stable`)
+2. ✅ Cross-camera prompt upgrade — done (prev session)
+3. ✅ Sensor anomaly detection — done (IsolationForest, flags uncertainty in ledger)
+4. ✅ Structured output validator — done (3 self-healing rules in `vlm_client.py`)
+5. ✅ Emergency broadcast loop — done (LLM PA script + espeak TTS + in-browser audio)
+6. ✅ Evacuation zone geometry — done (PAC cone + wind arrow SVG in left column)
+7. ✅ RAG Incident Memory — done (ChromaDB + all-MiniLM-L6-v2, 8 seeded incidents, injected into VLM prompt)
+
+---
+
 Ideas to implement if time permits before demo. Ordered by impact.
 
 ---

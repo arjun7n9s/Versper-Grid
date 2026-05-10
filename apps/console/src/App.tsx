@@ -3,7 +3,7 @@ import {
   Cpu, FileText, HelpCircle, Mic, Radio, Send,
   ShieldAlert, Siren, Video, Waves, Zap, Volume2,
   GitMerge, Brain, Eye, Megaphone, TrendingUp, Clock,
-  X, RefreshCw
+  X, RefreshCw, MapPin, MicOff
 } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { fallbackScenario, type EvidenceItem, type Scenario } from "./domain";
@@ -369,7 +369,7 @@ function EvidenceRail({ evidence }: { evidence: EvidenceItem[] }) {
 }
 
 // ─── RESPONSE ACTIONS ────────────────────────────────────────────────────
-function ResponseActions({ scenario, onBroadcast }: { scenario: Scenario; onBroadcast: () => void }) {
+function ResponseActions({ scenario, onBroadcast }: { scenario: Scenario; onBroadcast: (approvedTitles: string[]) => void }) {
   const [approved, setApproved] = useState<Set<string>>(new Set());
   const toggle = (id:string)=>setApproved(p=>{const n=new Set(p);n.has(id)?n.delete(id):n.add(id);return n});
   const actions = scenario.actions;
@@ -412,7 +412,10 @@ function ResponseActions({ scenario, onBroadcast }: { scenario: Scenario; onBroa
             ))}
           </div>
         )}
-        <button className="broadcast-btn" onClick={onBroadcast} disabled={approved.size===0}>
+        <button className="broadcast-btn" onClick={() => {
+          const titles = actions.filter(a=>approved.has(a.id)).map(a=>a.title);
+          onBroadcast(titles);
+        }} disabled={approved.size===0}>
           <Megaphone size={13}/> Approve Broadcast{approved.size>0?` (${approved.size})`:""}
         </button>
       </div>
@@ -424,7 +427,7 @@ function ResponseActions({ scenario, onBroadcast }: { scenario: Scenario; onBroa
 function UncertaintyLedger({ scenario }: { scenario: Scenario }) {
   const items = scenario.uncertainties ?? [];
   return (
-    <div className="panel" style={{maxHeight:240}}>
+    <div className="panel ledger-panel">
       <div className="panel-head">
         <span className="panel-title"><HelpCircle size={11}/> Uncertainty Ledger</span>
         <span className={`badge ${items.length>0?"amber":""}`}>{items.length}</span>
@@ -445,6 +448,103 @@ function UncertaintyLedger({ scenario }: { scenario: Scenario }) {
                 <div className={`unc-badge ${u.severity}`}>{u.severity}</div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── ZONE MAP ─────────────────────────────────────────────────────────────
+const SEVERITY_COLORS: Record<string, string> = {
+  critical: "rgba(239,68,68,0.55)",
+  elevated: "rgba(245,158,11,0.45)",
+  watch:    "rgba(0,212,245,0.25)",
+};
+const SEVERITY_STROKE: Record<string, string> = {
+  critical: "#ef4444",
+  elevated: "#f59e0b",
+  watch:    "#00d4f5",
+};
+
+function ZoneMap({ scenario }: { scenario: Scenario }) {
+  const { zones } = scenario;
+  if (!zones.length) return null;
+
+  const evac = zones.find(z => z.metadata?.is_exclusion_cone);
+  const conePoints: [number, number][] = evac?.metadata?.cone_points as [number,number][] ?? [];
+  const polyStr = conePoints.map(([x,y]) => `${x},${y}`).join(" ");
+
+  return (
+    <div className="panel">
+      <div className="panel-head">
+        <span className="panel-title"><MapPin size={11}/> Zone Map</span>
+        <span className="badge">{zones.length} zones</span>
+      </div>
+      <div className="zone-map-wrap">
+        <svg viewBox="0 0 100 100" className="zone-map-svg" preserveAspectRatio="xMidYMid meet">
+          {/* Grid lines */}
+          {[25,50,75].map(v => (
+            <g key={v}>
+              <line x1={v} y1={0} x2={v} y2={100} stroke="rgba(255,255,255,0.04)" strokeWidth="0.3"/>
+              <line x1={0} y1={v} x2={100} y2={v} stroke="rgba(255,255,255,0.04)" strokeWidth="0.3"/>
+            </g>
+          ))}
+
+          {/* Evac cone polygon */}
+          {conePoints.length === 3 && (
+            <polygon
+              points={polyStr}
+              fill="rgba(239,68,68,0.12)"
+              stroke="#ef4444"
+              strokeWidth="0.6"
+              strokeDasharray="2 1.5"
+            />
+          )}
+
+          {/* Risk zone circles */}
+          {zones.filter(z => !z.metadata?.is_exclusion_cone).map(z => (
+            <g key={z.id}>
+              <circle
+                cx={z.x} cy={z.y} r={z.radius}
+                fill={SEVERITY_COLORS[z.severity] ?? SEVERITY_COLORS.watch}
+                stroke={SEVERITY_STROKE[z.severity] ?? SEVERITY_STROKE.watch}
+                strokeWidth="0.5"
+              />
+              <text x={z.x} y={z.y + 1} textAnchor="middle"
+                fontSize="4.5" fill="#fff" fontFamily="monospace" opacity={0.85}>
+                {z.label.split(" ")[0]}
+              </text>
+            </g>
+          ))}
+
+          {/* Wind arrow if evac zone present */}
+          {evac && (() => {
+            const deg = evac.metadata?.wind_direction_deg as number ?? 225;
+            const rad = (270 - deg) * Math.PI / 180;
+            const ax = evac.x + 7 * Math.cos(rad);
+            const ay = evac.y - 7 * Math.sin(rad);
+            return (
+              <g>
+                <line x1={evac.x} y1={evac.y} x2={ax} y2={ay}
+                  stroke="#f59e0b" strokeWidth="0.8" markerEnd="url(#arr)"/>
+              </g>
+            );
+          })()}
+
+          <defs>
+            <marker id="arr" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto">
+              <path d="M0,0 L4,2 L0,4 z" fill="#f59e0b"/>
+            </marker>
+          </defs>
+        </svg>
+
+        {evac && (
+          <div className="zone-map-legend">
+            <span className="zml-item evac">▲ Evac cone</span>
+            <span className="zml-item">
+              Wind {(evac.metadata?.wind_speed_mps as number)?.toFixed(1)} m/s @ {(evac.metadata?.wind_direction_deg as number)?.toFixed(0)}°
+            </span>
           </div>
         )}
       </div>
@@ -492,7 +592,7 @@ function PipelineTicker({ agentState }: { agentState: OrchestratorState }) {
 // ─── JOB LIST (left panel, restores old pipeline feed) ────────────────────
 function JobList({ jobs }: { jobs: JobEntry[] }) {
   return (
-    <div className="panel" style={{maxHeight:200}}>
+    <div className="panel job-panel">
       <div className="panel-head">
         <span className="panel-title"><Zap size={11}/> Pipeline Jobs</span>
         <span className="badge">{jobs.length}</span>
@@ -525,7 +625,7 @@ const DEMO_VOICE = [
 ];
 type VMsg = { id: number; type: "hq"|"field"; sender: string; location: string; text: string; file?: string };
 
-function VoiceChannel({ onIngest, onVoiceEvidence }: { onIngest: (jobId:string, backend:string) => void; onVoiceEvidence: (items: EvidenceItem[]) => void }) {
+function VoiceChannel({ onIngest, onVoiceEvidence }: { onIngest: () => void; onVoiceEvidence: (items: EvidenceItem[]) => void }) {
   const [micActive,  setMicActive]  = useState(false);
   const [messages,   setMessages]   = useState<VMsg[]>([]);
   const [processing, setProcessing] = useState(false);
@@ -577,7 +677,7 @@ function VoiceChannel({ onIngest, onVoiceEvidence }: { onIngest: (jobId:string, 
       form.append("voice_manifest", JSON.stringify(DEMO_VOICE));
       for (const f of files) form.append("audio", f);
       const res = await fetch(`${API_BASE}/api/ingest/upload`, { method:"POST", body:form });
-      if (res.ok) { const j = await res.json(); onIngest(j.job_id, j.backend ?? "vllm"); }
+      if (res.ok) { onIngest(); }
     } catch(e) { console.error("Voice ingest error", e); }
     setProcessing(false);
   };
@@ -607,7 +707,7 @@ function VoiceChannel({ onIngest, onVoiceEvidence }: { onIngest: (jobId:string, 
       </div>
       <div className="voice-controls">
         <button className={`mic-btn ${micActive?"active":""}`} onClick={toggleMic} disabled={processing}>
-          <Mic size={15}/>
+          {micActive ? <MicOff size={15}/> : <Mic size={15}/>}
         </button>
         <div className={`waveform ${micActive?"active":""}`}>
           {Array.from({length:7},(_,i)=><div key={i} className="wv-bar"/>)}
@@ -621,14 +721,67 @@ function VoiceChannel({ onIngest, onVoiceEvidence }: { onIngest: (jobId:string, 
 }
 
 // ─── BROADCAST TOAST ──────────────────────────────────────────────────────
-function BroadcastToast({ onClose }: { onClose: () => void }) {
-  useEffect(() => { const t = setTimeout(onClose, 6000); return () => clearTimeout(t); }, [onClose]);
+function BroadcastToast({ scenario, approvedTitles, onClose }: {
+  scenario: Scenario;
+  approvedTitles: string[];
+  onClose: () => void;
+}) {
+  const [script, setScript] = useState("");
+  const [playing, setPlaying] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]   = useState("");
+  const audioRef = useRef<HTMLAudioElement|null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const windInfo = scenario.evidence
+          .find(e => e.kind === "sensor")?.summary?.match(/wind.+/i)?.[0] ?? "";
+        const res = await fetch(`${API_BASE}/api/broadcast/approve`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            incident: scenario.incident,
+            location: scenario.location,
+            approved_actions: approvedTitles,
+            wind_info: windInfo,
+          }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (cancelled) return;
+        setScript(data.script ?? "");
+        setLoading(false);
+        if (data.audio_url) {
+          const audio = new Audio(`${API_BASE}${data.audio_url}?t=${Date.now()}`);
+          audioRef.current = audio;
+          audio.onplay  = () => setPlaying(true);
+          audio.onended = () => setPlaying(false);
+          audio.play().catch(() => setPlaying(false));
+        } else {
+          setError("TTS unavailable — script generated only");
+        }
+      } catch (e: any) {
+        if (!cancelled) { setLoading(false); setError(String(e)); }
+      }
+    };
+    run();
+    const t = setTimeout(onClose, 30000);
+    return () => { cancelled = true; clearTimeout(t); audioRef.current?.pause(); };
+  }, []);
+
   return (
     <div className="broadcast-toast">
-      <Megaphone size={15}/>
-      <div>
-        <div className="bcast-title">PA Broadcast Dispatched</div>
-        <div className="bcast-sub">Evacuation announcement queued for site speaker system</div>
+      <div className="bcast-icon">
+        <Megaphone size={18} className={playing ? "bcast-pulse" : ""}/>
+      </div>
+      <div className="bcast-body">
+        <div className="bcast-title">
+          {loading ? "Generating PA announcement…" : playing ? "⏵ Broadcasting…" : "PA Broadcast Ready"}
+        </div>
+        {script && <div className="bcast-script">{script}</div>}
+        {error  && <div className="bcast-err">{error}</div>}
       </div>
       <button className="bcast-close" onClick={onClose}><X size={13}/></button>
     </div>
@@ -639,6 +792,7 @@ function BroadcastToast({ onClose }: { onClose: () => void }) {
 export function App() {
   const orch = useOrchestrator();
   const [showBroadcast, setShowBroadcast] = useState(false);
+  const [broadcastTitles, setBroadcastTitles] = useState<string[]>([]);
 
   const scenario = orch.scenario;
   const critZ    = scenario.zones.filter(z => z.severity === "critical").length;
@@ -671,9 +825,10 @@ export function App() {
       {/* ── 3-COLUMN WORKSPACE ── */}
       <main className="workspace">
 
-        {/* LEFT: KPIs + Jobs + Evidence */}
-        <div className="col">
+        {/* LEFT: KPIs + Zone Map + Jobs + Evidence */}
+        <div className="col col-left">
           <KpiBlock scenario={scenario} />
+          <ZoneMap scenario={scenario} />
           <JobList jobs={orch.jobs} />
           <EvidenceRail evidence={scenario.evidence} />
         </div>
@@ -692,12 +847,12 @@ export function App() {
         <div className="col">
           <IncidentBrief scenario={scenario} />
           <UncertaintyLedger scenario={scenario} />
-          <ResponseActions scenario={scenario} onBroadcast={() => setShowBroadcast(true)} />
+          <ResponseActions scenario={scenario} onBroadcast={(titles) => { setBroadcastTitles(titles); setShowBroadcast(true); }} />
         </div>
 
       </main>
 
-      {showBroadcast && <BroadcastToast onClose={() => setShowBroadcast(false)} />}
+      {showBroadcast && <BroadcastToast scenario={scenario} approvedTitles={broadcastTitles} onClose={() => setShowBroadcast(false)} />}
     </div>
   );
 }

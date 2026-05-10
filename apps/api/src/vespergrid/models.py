@@ -31,6 +31,7 @@ class RiskZone(BaseModel):
     radius: float = Field(gt=0, le=50)
     severity: Severity
     rationale: str
+    metadata: dict = Field(default_factory=dict)
 
 
 class ResponseAction(BaseModel):

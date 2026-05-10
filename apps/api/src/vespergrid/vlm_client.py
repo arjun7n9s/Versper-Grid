@@ -106,16 +106,19 @@ def _build_messages(
     source_uuid: str,
     field_notes: str,
     image_data_urls: list[str],
+    historical_context: str = "",
 ) -> list[dict]:
     user_content: list[dict] = []
     for url in image_data_urls:
         user_content.append({"type": "image_url", "image_url": {"url": url}})
+    context_block = f"\n\n{historical_context}" if historical_context else ""
     user_content.append(
         {
             "type": "text",
             "text": (
                 f"source_uuid: {source_uuid}\n"
-                f"operator_field_notes: {field_notes or '(none)'}\n"
+                f"operator_field_notes: {field_notes or '(none)'}"
+                f"{context_block}\n"
                 "Return the JSON now."
             ),
         }
@@ -167,9 +170,20 @@ async def parse_evidence(
     images = list(image_payloads)[:max_frames]
     image_urls = [_data_url_for(img, mime=image_mime) for img in images]
 
+    # RAG: retrieve similar historical incidents and inject as context
+    historical_context = ""
+    try:
+        from .memory import retrieve_similar, format_precedents
+        query = f"{field_notes or ''} LNG terminal gas leak sensor trace camera evidence"
+        hits = retrieve_similar(query, n=2)
+        historical_context = format_precedents(hits)
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("RAG retrieval skipped: %s", exc)
+
     payload = {
         "model": model,
-        "messages": _build_messages(source_uuid, field_notes, image_urls),
+        "messages": _build_messages(source_uuid, field_notes, image_urls, historical_context),
         "temperature": 0.1,
         "max_tokens": 768,
         "response_format": {"type": "json_object"},
@@ -208,6 +222,67 @@ async def parse_evidence(
     parsed["source_uuid"] = source_uuid
 
     try:
-        return VLMObservationsBundle.model_validate(parsed)
+        bundle = VLMObservationsBundle.model_validate(parsed)
     except ValidationError as exc:
         raise VLMClientError(f"VLM output failed schema validation: {exc}") from exc
+
+    return _validate_bundle(bundle, source_uuid)
+
+
+def _validate_bundle(bundle: VLMObservationsBundle, source_uuid: str) -> VLMObservationsBundle:
+    """Structured output validator: catch and auto-correct logical inconsistencies.
+
+    Rules checked:
+    1. confidence >= 0.9 but zero Hazard observations → downgrade avg confidence
+    2. Hazard present but zero Constraint (action) observations → inject a placeholder
+    3. All high-confidence observations but zero uncertainties → inject a missing_data flag
+    """
+    import logging
+    log = logging.getLogger(__name__)
+
+    obs = list(bundle.observations)
+    unc = list(bundle.uncertainties)
+    hazards = [o for o in obs if o.type == "Hazard"]
+    constraints = [o for o in obs if o.type == "Constraint"]
+    avg_conf = sum(o.confidence for o in obs) / len(obs) if obs else 0.0
+    changed = False
+
+    # Rule 1: suspiciously high confidence with no hazards
+    if avg_conf >= 0.90 and not hazards and obs:
+        log.warning("Validator: avg_conf=%.2f but 0 hazards — capping confidences at 0.80", avg_conf)
+        obs = [o.model_copy(update={"confidence": min(o.confidence, 0.80)}) for o in obs]
+        changed = True
+
+    # Rule 2: hazard present but no response-action constraints
+    if hazards and not constraints:
+        log.warning("Validator: %d hazard(s) but 0 Constraint obs — injecting placeholder action", len(hazards))
+        obs.append(VLMObservation(
+            entity="Safety team",
+            type="Constraint",
+            observation=(
+                f"Contain and monitor the hazard identified near {hazards[0].entity}. "
+                "Verify with additional sensor and camera feeds before dispatch."
+            ),
+            confidence=round(hazards[0].confidence * 0.85, 3),
+        ))
+        changed = True
+
+    # Rule 3: observations present but no uncertainties — flag that validation was needed
+    if obs and not unc:
+        log.warning("Validator: %d obs but 0 uncertainties — injecting missing_data flag", len(obs))
+        unc.append(VLMUncertainty(
+            kind="missing_data",
+            detail=(
+                "No uncertainty flags were returned by the model for this bundle. "
+                "At least one source angle may be inconclusive; recommend corroboration."
+            ),
+        ))
+        changed = True
+
+    if changed:
+        return VLMObservationsBundle(
+            source_uuid=source_uuid,
+            observations=obs,
+            uncertainties=unc,
+        )
+    return bundle
