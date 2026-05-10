@@ -202,8 +202,9 @@ Requires=xvfb.service
 User=root
 Environment=DISPLAY=:99
 Environment=LIBGL_ALWAYS_SOFTWARE=1
-Environment=MESA_GL_VERSION_OVERRIDE=3.3
-Environment=GALLIUM_DRIVER=softpipe
+Environment=MESA_GL_VERSION_OVERRIDE=4.5
+Environment=GALLIUM_DRIVER=llvmpipe
+Environment=LP_NUM_THREADS=16
 Environment=GZ_SIM_RESOURCE_PATH=/opt/vespergrid/ros2_temp/install/lng_terminal_world/share/lng_terminal_world:/opt/vespergrid/ros2_temp/install/lng_terminal_world/share/lng_terminal_world/models
 Environment=GZ_SIM_SYSTEM_PLUGIN_PATH=/opt/vespergrid/ros2_temp/install/lng_terminal_world/lib/lng_terminal_world
 ExecStart=/bin/bash -c 'source /opt/ros/jazzy/setup.bash && source /opt/vespergrid/ros2_temp/install/setup.bash && gz sim -r -s --render-engine ogre --headless-rendering /opt/vespergrid/ros2_temp/install/lng_terminal_world/share/lng_terminal_world/worlds/lng_terminal.sdf'
@@ -228,13 +229,15 @@ Environment=DISPLAY=:99
 ExecStart=/bin/bash -c "source /opt/ros/jazzy/setup.bash && source /opt/vespergrid/ros2_temp/install/setup.bash && ros2 run ros_gz_bridge parameter_bridge \
   /world/lng_terminal/model/cctv_south/link/cam_sensor_link/sensor/cctv_south_cam/image@sensor_msgs/msg/Image[gz.msgs.Image \
   /world/lng_terminal/model/cctv_gate/link/cam_sensor_link/sensor/cctv_gate_cam/image@sensor_msgs/msg/Image[gz.msgs.Image \
-  /world/lng_terminal/model/drone_d1/link/base_link/sensor/drone_cam/image@sensor_msgs/msg/Image[gz.msgs.Image \
+  /world/lng_terminal/model/drone_d1/link/base_link/sensor/drone_cam_main/image@sensor_msgs/msg/Image[gz.msgs.Image \
+  /world/lng_terminal/model/drone_d1/link/base_link/sensor/drone_cam_back/image@sensor_msgs/msg/Image[gz.msgs.Image \
   /world/lng_terminal/model/drone_d1/link/base_link/sensor/drone_cam_wide/image@sensor_msgs/msg/Image[gz.msgs.Image \
   /world/lng_terminal/model/drone_d1/link/base_link/sensor/drone_cam_track/image@sensor_msgs/msg/Image[gz.msgs.Image \
   --ros-args \
     -r /world/lng_terminal/model/cctv_south/link/cam_sensor_link/sensor/cctv_south_cam/image:=/cctv_south/image_raw \
     -r /world/lng_terminal/model/cctv_gate/link/cam_sensor_link/sensor/cctv_gate_cam/image:=/cctv_gate/image_raw \
-    -r /world/lng_terminal/model/drone_d1/link/base_link/sensor/drone_cam/image:=/drone_d1/image_raw \
+    -r /world/lng_terminal/model/drone_d1/link/base_link/sensor/drone_cam_main/image:=/drone_d1/image_raw \
+    -r /world/lng_terminal/model/drone_d1/link/base_link/sensor/drone_cam_back/image:=/drone_d1/image_back \
     -r /world/lng_terminal/model/drone_d1/link/base_link/sensor/drone_cam_wide/image:=/drone_d1/image_wide \
     -r /world/lng_terminal/model/drone_d1/link/base_link/sensor/drone_cam_track/image:=/drone_d1/image_track"
 Restart=always
@@ -246,7 +249,7 @@ EOF
 
 # --- Frame sampler (ROS2 → API) ---
 # FIX #1: uses system python3 (not venv) because ROS2 sensor_msgs requires system python3-numpy
-# FIX #12: SAMPLE_INTERVAL_S=20 to avoid overloading the vLLM inference queue
+# FIX #12: SAMPLE_INTERVAL_S=1 for ~1s frame-to-frame latency on dashboard
 cat > /etc/systemd/system/vespergrid-sampler.service <<'EOF'
 [Unit]
 Description=VesperGrid ROS2 Frame Sampler
@@ -257,7 +260,7 @@ Requires=vespergrid-bridge.service
 User=root
 Environment=DISPLAY=:99
 Environment=VESPER_API_URL=http://localhost:8742/api
-Environment=SAMPLE_INTERVAL_S=20
+Environment=SAMPLE_INTERVAL_S=1
 Environment=MAX_FRAMES_PER_BUNDLE=3
 Environment=JPEG_QUALITY=85
 ExecStart=/bin/bash -c 'source /opt/ros/jazzy/setup.bash && source /opt/vespergrid/ros2_temp/install/setup.bash && /usr/bin/python3 /opt/vespergrid/ros2_temp/install/lng_terminal_world/lib/lng_terminal_world/frame_sampler.py'

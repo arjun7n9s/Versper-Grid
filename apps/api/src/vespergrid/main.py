@@ -200,18 +200,24 @@ async def serve_evidence(uuid: str, filename: str):
     return FileResponse(str(target), media_type=media_type)
 
 
+# Maps API source names to the filename prefix used by frame_sampler
+_SOURCE_FILE_PREFIX: dict[str, str] = {
+    "cctv_south":    "cctv_south_image_raw_",
+    "drone_d1":      "drone_d1_image_raw_",
+    "drone_d1_back": "drone_d1_image_back_",
+    "cctv_gate":     "cctv_gate_image_raw_",
+}
+
+
 @app.get("/api/feeds/latest/{source}")
 async def latest_feed_frame(source: str):
-    """Return the most recently uploaded frame whose filename starts with `source`.
+    """Return the most recently uploaded frame for the given source.
 
-    `source` matches camera prefixes used by frame_sampler:
-      cctv_south  -> cctv_south_*.jpg
-      drone_d1    -> drone_d1_*.jpg
-      cctv_gate   -> cctv_gate_*.jpg
-
-    Scans all job directories newest-first and returns the first match.
+    Uses _SOURCE_FILE_PREFIX to map source names to exact filename prefixes,
+    preventing drone_d1 from accidentally matching drone_d1_image_back files.
     Returns 404 if no frame has been uploaded yet.
     """
+    prefix = _SOURCE_FILE_PREFIX.get(source, source + "_")
     best: Path | None = None
     best_mtime: float = 0.0
 
@@ -224,7 +230,7 @@ async def latest_feed_frame(source: str):
             if not job_dir.is_dir():
                 continue
             for f in job_dir.iterdir():
-                if f.is_file() and f.name.startswith(source) and f.suffix in (".jpg", ".jpeg", ".png"):
+                if f.is_file() and f.name.startswith(prefix) and f.suffix in (".jpg", ".jpeg", ".png"):
                     mt = f.stat().st_mtime
                     if mt > best_mtime:
                         best_mtime = mt
@@ -245,7 +251,7 @@ async def latest_feed_frame(source: str):
 @app.get("/api/feeds")
 async def list_feeds():
     """Return available feed sources and their latest-frame URLs."""
-    sources = ["cctv_south", "drone_d1", "cctv_gate"]
+    sources = ["cctv_south", "drone_d1", "drone_d1_back", "cctv_gate"]
     result = []
     for src in sources:
         found = False
@@ -257,8 +263,9 @@ async def list_feeds():
             ):
                 if not job_dir.is_dir():
                     continue
+                prefix = _SOURCE_FILE_PREFIX.get(src, src + "_")
                 for f in job_dir.iterdir():
-                    if f.is_file() and f.name.startswith(src):
+                    if f.is_file() and f.name.startswith(prefix):
                         found = True
                         break
                 if found:
